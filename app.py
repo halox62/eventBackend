@@ -146,16 +146,17 @@ scheduler.add_job(update_event_rankings, 'cron', hour=0, minute=0)
 scheduler.start()
   
 # Prendi l'URL del database dalle variabili d'ambiente
-DATABASE_URL = os.environ.get('postgresql://postgres:WlgOLxcRKlEyaIhxQCOCcgVsnudsVgsl@autorack.proxy.rlwy.net:50370/railway')
+DATABASE_URL = os.environ.get('DATABASE_URL')  
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # Configura il database
-app.config['SQLALCHEMY_DATABASE_URL'] = DATABASE_URL
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL  
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inizializza il database
 db = SQLAlchemy(app)
+
 
 # Modello per il file caricato
 class FileRecord(db.Model):
