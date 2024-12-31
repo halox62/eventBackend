@@ -236,12 +236,8 @@ firebase_credentials = {
 firebase_bucket = os.getenv("FIREBASE_BUCKET")
 
 
-
-# Converti la stringa JSON in un dizionario
-credentials_dict = json.loads(firebase_credentials)
-
 # Inizializza Firebase con le credenziali
-cred = credentials.Certificate(credentials_dict)
+cred = credentials.Certificate(firebase_credentials)
 firebase_admin.initialize_app(cred, {
     'storageBucket': firebase_bucket
 })
