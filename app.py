@@ -37,14 +37,12 @@ from dotenv import load_dotenv
 
 FIREBASE_PUBLIC_KEYS_URL = os.getenv("FIREBASE_PUBLIC_KEYS_URL")
 FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID")
-FIREBASE_CREDENTIALS = os.getenv("FIREBASE_CREDENTIALS")
+#FIREBASE_CREDENTIALS = os.getenv("FIREBASE_CREDENTIALS")
 
 
-print(FIREBASE_PUBLIC_KEYS_URL)
-print(FIREBASE_PROJECT_ID)
 
 
-credentials_dict = json.loads(FIREBASE_CREDENTIALS)
+#credentials_dict = json.loads(FIREBASE_CREDENTIALS)
 
 app = Flask(__name__)
 
