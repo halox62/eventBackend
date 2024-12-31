@@ -39,8 +39,6 @@ FIREBASE_PUBLIC_KEYS_URL = os.getenv("FIREBASE_PUBLIC_KEYS_URL")
 FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID")
 
 
-
-
 app = Flask(__name__)
 
 CORS(app) 
@@ -216,9 +214,25 @@ class EventSubscibe(db.Model):
 with app.app_context():
     db.create_all()
 
+
+firebase_credentials = {
+    "type": os.getenv("FIREBASE_TYPE"),
+    "project_id": os.getenv("FIREBASE_PROJECT_ID"),
+    "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
+    "private_key": os.getenv("FIREBASE_PRIVATE_KEY"),
+    "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
+    "client_id": os.getenv("FIREBASE_CLIENT_ID"),
+    "auth_uri": os.getenv("FIREBASE_AUTH_URI"),
+    "token_uri": os.getenv("FIREBASE_TOKEN_URI"),
+    "auth_provider_x509_cert_url": os.getenv("FIREBASE_AUTH_PROVIDER_X509_CERT_URL"),
+    "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_X509_CERT_URL"),
+    "universe_domain": "googleapis.com"
+}
+
+
 # Inizializza Firebase Admin SDK con il file di credenziali
 # Recupera le credenziali dal file .env
-firebase_credentials = os.getenv("FIREBASE_CREDENTIALS")
+#firebase_credentials = os.getenv("FIREBASE_CREDENTIALS")
 firebase_bucket = os.getenv("FIREBASE_BUCKET")
 
 
