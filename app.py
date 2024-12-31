@@ -145,8 +145,13 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(update_event_rankings, 'cron', hour=0, minute=0)
 scheduler.start()
   
-# Configurazione del database PostgreSQL
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Giorgio02@localhost/postgres'
+# Prendi l'URL del database dalle variabili d'ambiente
+DATABASE_URL = os.environ.get('postgresql://postgres:WlgOLxcRKlEyaIhxQCOCcgVsnudsVgsl@autorack.proxy.rlwy.net:50370/railway')
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Configura il database
+app.config['SQLALCHEMY_DATABASE_URL'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inizializza il database
