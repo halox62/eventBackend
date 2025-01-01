@@ -587,33 +587,41 @@ def get_events_by_date():
 @app.route('/addEvent', methods=['POST'])
 @firebase_required
 def addEvent():
-
-    data = request.json
-    email = request.user.get("email")
-    code = data.get('code')
-
-    subscribeUser=EventSubscibe.query.filter_by(emailUser=email, eventCode=code).all()
-
-    #verificare che il codice è giusto ////TODOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-
-    if(subscribeUser):
-         return jsonify({'message': 'Registration already completed'}), 400
     try:
-        Subscibe = EventSubscibe(
+       
+        data = request.json
+        email = request.user.get("email")
+        code = data.get('code')
+
+       
+        if not code:
+            return jsonify({'message': 'Event code is required'}), 400
+
+        
+        event = Event.query.filter_by(eventCode=code).first()
+        if not event:
+            return jsonify({'message': 'Invalid event code'}), 404
+
+       
+        subscribeUser = EventSubscibe.query.filter_by(emailUser=email, eventCode=code).first()
+        if subscribeUser:
+            return jsonify({'message': 'Registration already completed'}), 400
+
+       
+        new_subscription = EventSubscibe(
             emailUser=email,
             eventCode=code,
-            position="false"
+            position="false" 
         )
 
-        db.session.add(Subscibe)
-        db.session.commit() 
-      
-       
-        return jsonify({'events': "ok"}), 200
+        db.session.add(new_subscription)
+        db.session.commit()
+        
+        return jsonify({'message': 'Successfully registered to event'}), 200
 
-    except ValueError:
-       
-        return jsonify({'message': 'Error'}), 400
+    except Exception as e:
+        db.session.rollback()  
+        return jsonify({'message': 'Internal server error'}), 500
     
 
 @app.route('/uploadEventImage', methods=['POST'])#query per caricare una foto per un evento
