@@ -1136,6 +1136,7 @@ def delete_event():
 
 
 @app.route('/profile_Page', methods=['GET'])
+@firebase_required
 def profile_page():
     email = request.args.get('email')
     if not email:
@@ -1310,18 +1311,5 @@ def profile_page():
     return render_template_string(html_template)
 
 
-@app.route('/debug_routes')
-def debug_routes():
-    routes = []
-    for rule in app.url_map.iter_rules():
-        routes.append({
-            'endpoint': rule.endpoint,
-            'methods': list(rule.methods),
-            'url': str(rule.rule)
-        })
-    return jsonify(routes)
-        
-    
-    
 if __name__ == '__main__':
     app.run(host = 'localhost', port = 8080, debug = True)    
