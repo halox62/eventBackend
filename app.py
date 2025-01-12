@@ -1150,6 +1150,7 @@ def profile_page():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profilo Utente</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <link rel="icon" href="data:,">  <!-- Questo previene la richiesta automatica del favicon -->
 </head>
 <body class="bg-gray-100">
     <div class="min-h-screen">
