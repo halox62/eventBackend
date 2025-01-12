@@ -1308,6 +1308,18 @@ def profile_page():
     """
     
     return render_template_string(html_template)
+
+
+@app.route('/debug_routes')
+def debug_routes():
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            'endpoint': rule.endpoint,
+            'methods': list(rule.methods),
+            'url': str(rule.rule)
+        })
+    return jsonify(routes)
         
     
     
