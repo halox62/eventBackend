@@ -1135,8 +1135,7 @@ def delete_event():
     
 
 
-@app.route('/profile_Page', methods=['GET'])
-@firebase_required
+@app.route('/profilePage', methods=['GET'])
 def profile_page():
     email = request.args.get('email')
     if not email:
