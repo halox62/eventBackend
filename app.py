@@ -1137,7 +1137,7 @@ def delete_event():
 
 @app.route('/profile_Page', methods=['GET'])
 def profile_page():
-    print(f"Richiesta ricevuta per: {request.path}")
+    app.logger.info(f"Richiesta ricevuta per: {request.path}")
     email = request.args.get('email')
     if not email:
         return jsonify({"msg": "Email mancante"}), 400
