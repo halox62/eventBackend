@@ -1105,8 +1105,21 @@ def creator():
  
     
 @app.route('/profilePage', methods=['GET'])
+@firebase_required  # Aggiungi il decoratore per l'autenticazione
 def profile_page():
-    return jsonify({"msg": "test"}), 200  
+    email = request.args.get('email')
+    if not email:
+        return jsonify({"msg": "Email mancante"}), 400
+    
+    user = UserAccount.query.filter_by(emailUser=email).first()
+    if not user:
+        return jsonify({"msg": "Utente non trovato"}), 404
+
+    return jsonify({
+        "userName": user.userName,
+        "profileImageUrl": user.profileImageUrl,
+        "point": user.point
+    }), 200
 
 
 @app.route('/routes')
