@@ -1186,11 +1186,16 @@ def profile_page():
         
         body {
             background-color: #fafafa;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
         }
 
-        .container {
-            max-width: 1024px;
+        .main-container {
+            width: 100%;
+            max-width: 800px;
             margin: 0 auto;
+            padding: 20px;
         }
 
         .profile-section {
@@ -1198,13 +1203,14 @@ def profile_page():
             border-radius: 16px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             margin-bottom: 24px;
+            width: 100%;
         }
 
         .image-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 24px;
-            padding: 24px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            padding: 20px;
             background-color: white;
             border-radius: 16px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -1212,16 +1218,21 @@ def profile_page():
 
         .grid-item {
             position: relative;
-            width: 100%;
-            height: 200px;
-            border-radius: 12px;
+            aspect-ratio: 1;
+            border-radius: 8px;
             overflow: hidden;
             background-color: var(--surface-variant);
-            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
 
-        .grid-item:hover {
-            transform: translateY(-4px);
+        .grid-item img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            padding: 4px;
         }
 
         .points-badge {
@@ -1252,11 +1263,23 @@ def profile_page():
             object-fit: contain;
             border-radius: 8px;
         }
+
+        @media (max-width: 768px) {
+            .image-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .image-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 </head>
-<body class="min-h-screen py-8 px-4">
-    <div class="container">
-        <div class="profile-section p-8">
+<body>
+    <div class="main-container">
+        <div class="profile-section p-6">
             <div class="flex items-center space-x-6">
                 <div class="flex-shrink-0">
                     <img id="profileImage" 
@@ -1310,7 +1333,7 @@ def profile_page():
             
             const img = document.createElement('img');
             img.src = imageUrl;
-            img.className = 'w-full h-full object-cover';
+            img.alt = 'Grid Image';
             img.onclick = () => {
                 document.getElementById('imageModal').classList.remove('hidden');
                 document.getElementById('modalImage').src = imageUrl;
