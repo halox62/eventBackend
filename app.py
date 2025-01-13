@@ -1102,36 +1102,213 @@ def creator():
 
     except Exception as e:
         return jsonify({"msg": "Errore interno del server"}), 500
- 
     
+@app.route('/delete_event', methods=['POST'])
+@firebase_required
+def delete_event():
+    try:
+
+        data = request.get_json()
+        event_code = data.get("eventCode")
+        email = request.user.get("email")
+        
+        if not event_code:
+            return jsonify({"msg": "Codice evento mancante"}), 400
+        
+        event = Event.query.filter(Event.eventCode==event_code, Event.emailUser==email).first()
+        
+        if not event:
+            return jsonify({"msg": "Evento non trovato o non autorizzato"}), 404
+        
+        EventSubscibe.query.filter_by(eventCode=event.eventCode).delete()
+
+        db.session.delete(event)
+
+        db.session.commit()
+
+        return jsonify({"msg": "Evento cancellato con successo"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore: {e}")
+        return jsonify({"msg": "Errore interno del server"}), 500
+    
+
+
 @app.route('/profilePage', methods=['GET'])
-@firebase_required  # Aggiungi il decoratore per l'autenticazione
 def profile_page():
     email = request.args.get('email')
     if not email:
         return jsonify({"msg": "Email mancante"}), 400
     
-    user = UserAccount.query.filter_by(emailUser=email).first()
-    if not user:
-        return jsonify({"msg": "Utente non trovato"}), 404
+   
+    html_template = """
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profilo Utente</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <link rel="icon" href="data:,">  <!-- Questo previene la richiesta automatica del favicon -->
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen">
+        <header class="bg-blue-600 text-white p-4 shadow-md">
+            <div class="container mx-auto">
+                <h1 class="text-xl font-semibold">Profilo</h1>
+            </div>
+        </header>
 
-    return jsonify({
-        "userName": user.userName,
-        "profileImageUrl": user.profileImageUrl,
-        "point": user.point
-    }), 200
+        <div id="loading" class="flex items-center justify-center min-h-screen">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
 
+        <div id="error" class="hidden p-4 text-center text-red-500"></div>
 
-@app.route('/routes')
-def list_routes():
-    routes = []
-    for rule in app.url_map.iter_rules():
-        routes.append({
-            "endpoint": rule.endpoint,
-            "methods": list(rule.methods),
-            "path": str(rule)
-        })
-    return jsonify(routes)
+        <main id="content" class="container mx-auto px-4 py-6 hidden">
+            <div class="flex items-center space-x-6 mb-8 p-4 bg-white rounded-lg shadow">
+                <div class="relative">
+                    <img id="profileImage" 
+                         class="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                         src=""
+                         alt="Profile"
+                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM6 12a6 6 0 1 1 12 0v1H6v-1zm0 3h12v1a7 7 0 1 1-14 0v-1z%22/></svg>'">
+                </div>
+                <div>
+                    <h2 id="userName" class="text-2xl font-bold"></h2>
+                    <h3 id="userEmail" class="text-gray-600"></h3>
+                </div>
+            </div>
+
+            <div id="imageGrid" class="grid grid-cols-3 gap-2"></div>
+        </main>
+
+        <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+            <img id="modalImage" class="max-h-screen max-w-screen-lg object-contain" src="" alt="Enlarged image">
+        </div>
+    </div>
+
+    <script>
+        const HOST = window.location.host;
+        
+        async function fetchProfileData(email) {
+            try {
+                const response = await fetch(`/profile`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load profile data');
+                }
+
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching profile:', error);
+                throw error;
+            }
+        }
+
+        async function fetchImages(email) {
+            try {
+                const response = await fetch(`/getImage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load images');
+                }
+
+                const data = await response.json();
+                return data.images;
+            } catch (error) {
+                console.error('Error fetching images:', error);
+                throw error;
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loading').classList.add('hidden');
+            const errorElement = document.getElementById('error');
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+        }
+
+        function createImageElement(imageUrl, index) {
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = `Image ${index + 1}`;
+            img.className = 'w-full h-32 object-cover rounded cursor-pointer transform transition-transform hover:scale-105';
+            
+            img.onclick = () => {
+                const modal = document.getElementById('imageModal');
+                const modalImage = document.getElementById('modalImage');
+                modalImage.src = imageUrl;
+                modal.classList.remove('hidden');
+            };
+
+            return img;
+        }
+
+        async function initialize() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const email = urlParams.get('email');
+
+            if (!email) {
+                showError('Email mancante nella URL');
+                return;
+            }
+
+            try {
+                const profileData = await fetchProfileData(email);
+                const images = await fetchImages(email);
+
+                // Update profile information
+                document.getElementById('userName').textContent = profileData.userName;
+                document.getElementById('userEmail').textContent = email;
+                if (profileData.profileImageUrl) {
+                    document.getElementById('profileImage').src = profileData.profileImageUrl;
+                }
+
+                // Create image grid
+                const imageGrid = document.getElementById('imageGrid');
+                images.forEach((imageUrl, index) => {
+                    imageGrid.appendChild(createImageElement(imageUrl, index));
+                });
+
+                // Hide loading, show content
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('content').classList.remove('hidden');
+
+                // Setup modal close behavior
+                document.getElementById('imageModal').onclick = function(e) {
+                    if (e.target === this) {
+                        this.classList.add('hidden');
+                    }
+                };
+
+            } catch (error) {
+                showError('Errore nel caricamento dei dati');
+            }
+        }
+
+        initialize();
+    </script>
+</body>
+</html>
+    """
+    
+    return render_template_string(html_template)
+
 
 if __name__ == '__main__':
     app.run(host = 'localhost', port = 8080, debug = True)    
