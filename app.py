@@ -324,7 +324,37 @@ def register():
         return jsonify({"error": str(e)}), 400
     
 
+@app.route('/profileInformation', methods=['GET'])
+def profile_with_images():
+    # Estrai l'email dai parametri della query string
+    email = request.args.get("email")
+
+    if not email:
+        return jsonify({"error": "Email not provided"}), 400
+
+
+    user = UserAccount.query.filter_by(emailUser=email).first()
+    if user is None:
+        return jsonify({"error": "User not found"}), 404
+
+
+    images = []
+    blobs = bucket.list_blobs(prefix=f'images/{email}/')  
+
+    for blob in blobs:
+        blob.make_public() 
+        images.append(blob.public_url)
+
+    return jsonify({
+        "userName": user.userName,
+        "profileImageUrl": user.profileImageUrl,
+        "point": user.point,
+        "images": images
+    }), 200
+    
+
 @app.route('/profile', methods=['POST'])
+@firebase_required
 def get_profile():
 
     email = request.user.get("email")
@@ -345,6 +375,7 @@ def get_profile():
 
 
 @app.route('/getImage', methods=['POST'])
+@firebase_required
 def get_Image():
    
     email = request.user.get("email")
@@ -1138,8 +1169,7 @@ def profile_page():
     email = request.args.get('email')
     if not email:
         return jsonify({"msg": "Email mancante"}), 400
-    
-   
+
     html_template = """
 <!DOCTYPE html>
 <html lang="it">
@@ -1188,48 +1218,20 @@ def profile_page():
     </div>
 
     <script>
-        const HOST = window.location.host;
-        
-        async function fetchProfileData(email) {
+        async function fetchProfileWithImages(email) {
             try {
-                const response = await fetch(`/profile`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email })
+                const response = await fetch(`/profileInformation?email=${encodeURIComponent(email)}`, {
+                    method: 'GET'
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to load profile data');
+                    throw new Error('Failed to load profile and images');
                 }
 
                 const data = await response.json();
                 return data;
             } catch (error) {
-                console.error('Error fetching profile:', error);
-                throw error;
-            }
-        }
-
-        async function fetchImages(email) {
-            try {
-                const response = await fetch(`/getImage`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to load images');
-                }
-
-                const data = await response.json();
-                return data.images;
-            } catch (error) {
-                console.error('Error fetching images:', error);
+                console.error('Error fetching profile and images:', error);
                 throw error;
             }
         }
@@ -1267,19 +1269,18 @@ def profile_page():
             }
 
             try {
-                const profileData = await fetchProfileData(email);
-                const images = await fetchImages(email);
+                const data = await fetchProfileWithImages(email);
 
                 // Update profile information
-                document.getElementById('userName').textContent = profileData.userName;
+                document.getElementById('userName').textContent = data.userName;
                 document.getElementById('userEmail').textContent = email;
-                if (profileData.profileImageUrl) {
-                    document.getElementById('profileImage').src = profileData.profileImageUrl;
+                if (data.profileImageUrl) {
+                    document.getElementById('profileImage').src = data.profileImageUrl;
                 }
 
                 // Create image grid
                 const imageGrid = document.getElementById('imageGrid');
-                images.forEach((imageUrl, index) => {
+                data.images.forEach((imageUrl, index) => {
                     imageGrid.appendChild(createImageElement(imageUrl, index));
                 });
 
@@ -1304,9 +1305,8 @@ def profile_page():
 </body>
 </html>
     """
-    
-    return render_template_string(html_template)
 
+    return render_template_string(html_template)
 
 if __name__ == '__main__':
     app.run(host = 'localhost', port = 8080, debug = True)    
