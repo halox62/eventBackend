@@ -1187,6 +1187,7 @@ def profile_page():
         }
         .image-grid-item {
             aspect-ratio: 1;
+            height: 140px;
         }
         .fade-in {
             animation: fadeIn 0.5s ease-in;
@@ -1198,6 +1199,11 @@ def profile_page():
         .modal-image {
             max-height: 90vh;
             max-width: 90vw;
+        }
+        #imageGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
         }
     </style>
 </head>
@@ -1218,34 +1224,34 @@ def profile_page():
 
         <div id="error" class="hidden max-w-md mx-auto mt-8 p-4 bg-red-50 text-red-600 rounded-lg text-center"></div>
 
-        <main id="content" class="container mx-auto px-4 py-8 hidden fade-in">
-            <div class="max-w-3xl mx-auto">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                    <div class="flex items-start space-x-6">
+        <main id="content" class="container mx-auto px-4 py-6 hidden fade-in">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+                    <div class="flex items-start space-x-4">
                         <div class="relative flex-shrink-0">
                             <img id="profileImage" 
-                                 class="w-24 h-24 rounded-full object-cover ring-2 ring-gray-100"
+                                 class="w-16 h-16 rounded-full object-cover ring-2 ring-gray-100"
                                  src=""
                                  alt="Profile"
                                  onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM6 12a6 6 0 1 1 12 0v1H6v-1zm0 3h12v1a7 7 0 1 1-14 0v-1z%22/></svg>'">
                         </div>
                         <div class="flex-1">
-                            <h2 id="userName" class="text-2xl font-semibold leading-tight mb-1"></h2>
+                            <h2 id="userName" class="text-xl font-semibold leading-tight mb-1"></h2>
                             <p id="userEmail" class="text-gray-500 text-sm"></p>
                         </div>
                     </div>
                 </div>
 
-                <div class="space-y-6">
-                    <h3 class="text-lg font-medium text-gray-900">Foto</h3>
-                    <div id="imageGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+                <div class="space-y-4">
+                    <h3 class="text-sm font-medium text-gray-900 mb-2">Foto</h3>
+                    <div id="imageGrid"></div>
                 </div>
             </main>
         </div>
 
         <div id="imageModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50">
             <button onclick="closeModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
@@ -1281,12 +1287,12 @@ def profile_page():
 
         function createImageElement(imageUrl, index) {
             const container = document.createElement('div');
-            container.className = 'image-grid-item bg-gray-100 rounded-lg overflow-hidden';
+            container.className = 'image-grid-item bg-gray-100 rounded-md overflow-hidden';
             
             const img = document.createElement('img');
             img.src = imageUrl;
             img.alt = `Image ${index + 1}`;
-            img.className = 'w-full h-full object-cover transition-all duration-300 hover:scale-105 cursor-zoom-in';
+            img.className = 'w-full h-full object-cover transition-all duration-200 hover:opacity-90 cursor-zoom-in';
             
             img.onclick = () => openModal(imageUrl);
             container.appendChild(img);
@@ -1337,7 +1343,6 @@ def profile_page():
             }
         }
 
-        // Close modal on escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeModal();
         });
