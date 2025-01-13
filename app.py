@@ -1185,54 +1185,61 @@ def profile_page():
         }
         
         body {
+            background-color: #fafafa;
+        }
+
+        .container {
+            max-width: 1024px;
+            margin: 0 auto;
+        }
+
+        .profile-section {
             background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
         }
 
         .image-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            padding: 0 16px;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 24px;
+            padding: 24px;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .grid-item {
             position: relative;
-            aspect-ratio: 1;
-            border-radius: 16px;
+            width: 100%;
+            height: 200px;
+            border-radius: 12px;
             overflow: hidden;
             background-color: var(--surface-variant);
+            transition: transform 0.2s;
         }
 
-        .delete-button {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            padding: 8px;
-            border-radius: 20px;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .delete-button:hover {
-            background-color: rgba(0, 0, 0, 0.7);
+        .grid-item:hover {
+            transform: translateY(-4px);
         }
 
         .points-badge {
             background-color: var(--primary-green);
-            padding: 6px 12px;
-            border-radius: 20px;
+            padding: 8px 16px;
+            border-radius: 24px;
             color: white;
             display: inline-block;
+            font-weight: 500;
         }
 
         .profile-image {
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             object-fit: cover;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 3px solid white;
         }
 
         #imageModal {
@@ -1240,16 +1247,17 @@ def profile_page():
         }
 
         .modal-content {
-            max-height: 90vh;
-            max-width: 90vw;
+            max-height: 80vh;
+            max-width: 80vw;
             object-fit: contain;
+            border-radius: 8px;
         }
     </style>
 </head>
-<body>
-    <div class="min-h-screen pb-6">
-        <div class="p-6">
-            <div class="flex items-start space-x-5">
+<body class="min-h-screen py-8 px-4">
+    <div class="container">
+        <div class="profile-section p-8">
+            <div class="flex items-center space-x-6">
                 <div class="flex-shrink-0">
                     <img id="profileImage" 
                          class="profile-image"
@@ -1257,8 +1265,8 @@ def profile_page():
                          alt="Profile"
                          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM6 12a6 6 0 1 1 12 0v1H6v-1z%22/></svg>'">
                 </div>
-                <div class="flex-1">
-                    <h1 id="userName" class="text-xl font-bold mb-2"></h1>
+                <div>
+                    <h1 id="userName" class="text-2xl font-bold mb-3"></h1>
                     <div class="points-badge">
                         <span id="points">0 points</span>
                     </div>
@@ -1269,15 +1277,15 @@ def profile_page():
         <div id="imageGrid" class="image-grid"></div>
 
         <div id="emptyState" class="hidden text-center mt-20">
-            <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="w-20 h-20 mx-auto mb-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <h3 class="text-lg font-medium text-gray-900">Nessuna foto disponibile</h3>
-            <p class="mt-2 text-gray-500">Inizia a catturare un outfit accattivante, scala le classifiche</p>
+            <h3 class="text-xl font-medium text-gray-900">Nessuna foto disponibile</h3>
+            <p class="mt-3 text-gray-500">Inizia a catturare un outfit accattivante, scala le classifiche</p>
         </div>
     </div>
 
-    <div id="imageModal" class="hidden fixed inset-0 z-50 flex items-center justify-center" onclick="this.classList.add('hidden')">
+    <div id="imageModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
         <img id="modalImage" class="modal-content" src="" alt="Enlarged image">
     </div>
 
@@ -1296,7 +1304,7 @@ def profile_page():
             }
         }
 
-        function createImageElement(imageUrl, index) {
+        function createImageElement(imageUrl) {
             const div = document.createElement('div');
             div.className = 'grid-item';
             
@@ -1308,25 +1316,7 @@ def profile_page():
                 document.getElementById('modalImage').src = imageUrl;
             };
 
-            const deleteButton = document.createElement('button');
-            deleteButton.className = 'delete-button';
-            deleteButton.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-            `;
-            deleteButton.onclick = (e) => {
-                e.stopPropagation();
-                if (confirm('Vuoi eliminare questa foto?')) {
-                    div.remove();
-                    if (document.getElementById('imageGrid').children.length === 0) {
-                        document.getElementById('emptyState').classList.remove('hidden');
-                    }
-                }
-            };
-
             div.appendChild(img);
-            div.appendChild(deleteButton);
             return div;
         }
 
@@ -1350,8 +1340,8 @@ def profile_page():
 
                 const imageGrid = document.getElementById('imageGrid');
                 if (data.images && data.images.length > 0) {
-                    data.images.forEach((imageUrl, index) => {
-                        imageGrid.appendChild(createImageElement(imageUrl, index));
+                    data.images.forEach(imageUrl => {
+                        imageGrid.appendChild(createImageElement(imageUrl));
                     });
                 } else {
                     document.getElementById('emptyState').classList.remove('hidden');
