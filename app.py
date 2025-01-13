@@ -325,7 +325,6 @@ def register():
     
 
 @app.route('/profile', methods=['POST'])
-@firebase_required
 def get_profile():
 
     email = request.user.get("email")
@@ -346,7 +345,6 @@ def get_profile():
 
 
 @app.route('/getImage', methods=['POST'])
-@firebase_required
 def get_Image():
    
     email = request.user.get("email")
