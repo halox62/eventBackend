@@ -1178,42 +1178,78 @@ def profile_page():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profilo Utente</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
-    <link rel="icon" href="data:,">  <!-- Questo previene la richiesta automatica del favicon -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:,">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .image-grid-item {
+            aspect-ratio: 1;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-image {
+            max-height: 90vh;
+            max-width: 90vw;
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50 text-gray-900">
     <div class="min-h-screen">
-        <header class="bg-blue-600 text-white p-4 shadow-md">
-            <div class="container mx-auto">
-                <h1 class="text-xl font-semibold">Profilo</h1>
+        <header class="bg-white border-b border-gray-200">
+            <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+                <h1 class="text-xl font-semibold tracking-tight">Profilo</h1>
+                <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition-colors">
+                    ← Indietro
+                </button>
             </div>
         </header>
 
-        <div id="loading" class="flex items-center justify-center min-h-screen">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div id="loading" class="flex items-center justify-center min-h-[60vh]">
+            <div class="animate-spin rounded-full h-8 w-8 border-2 border-gray-900 border-t-transparent"></div>
         </div>
 
-        <div id="error" class="hidden p-4 text-center text-red-500"></div>
+        <div id="error" class="hidden max-w-md mx-auto mt-8 p-4 bg-red-50 text-red-600 rounded-lg text-center"></div>
 
-        <main id="content" class="container mx-auto px-4 py-6 hidden">
-            <div class="flex items-center space-x-6 mb-8 p-4 bg-white rounded-lg shadow">
-                <div class="relative">
-                    <img id="profileImage" 
-                         class="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
-                         src=""
-                         alt="Profile"
-                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM6 12a6 6 0 1 1 12 0v1H6v-1zm0 3h12v1a7 7 0 1 1-14 0v-1z%22/></svg>'">
+        <main id="content" class="container mx-auto px-4 py-8 hidden fade-in">
+            <div class="max-w-3xl mx-auto">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                    <div class="flex items-start space-x-6">
+                        <div class="relative flex-shrink-0">
+                            <img id="profileImage" 
+                                 class="w-24 h-24 rounded-full object-cover ring-2 ring-gray-100"
+                                 src=""
+                                 alt="Profile"
+                                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM6 12a6 6 0 1 1 12 0v1H6v-1zm0 3h12v1a7 7 0 1 1-14 0v-1z%22/></svg>'">
+                        </div>
+                        <div class="flex-1">
+                            <h2 id="userName" class="text-2xl font-semibold leading-tight mb-1"></h2>
+                            <p id="userEmail" class="text-gray-500 text-sm"></p>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <h2 id="userName" class="text-2xl font-bold"></h2>
-                    <h3 id="userEmail" class="text-gray-600"></h3>
+
+                <div class="space-y-6">
+                    <h3 class="text-lg font-medium text-gray-900">Foto</h3>
+                    <div id="imageGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
                 </div>
-            </div>
+            </main>
+        </div>
 
-            <div id="imageGrid" class="grid grid-cols-3 gap-2"></div>
-        </main>
-
-        <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
-            <img id="modalImage" class="max-h-screen max-w-screen-lg object-contain" src="" alt="Enlarged image">
+        <div id="imageModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <img id="modalImage" class="modal-image object-contain fade-in" src="" alt="Enlarged image">
         </div>
     </div>
 
@@ -1244,19 +1280,30 @@ def profile_page():
         }
 
         function createImageElement(imageUrl, index) {
+            const container = document.createElement('div');
+            container.className = 'image-grid-item bg-gray-100 rounded-lg overflow-hidden';
+            
             const img = document.createElement('img');
             img.src = imageUrl;
             img.alt = `Image ${index + 1}`;
-            img.className = 'w-full h-32 object-cover rounded cursor-pointer transform transition-transform hover:scale-105';
+            img.className = 'w-full h-full object-cover transition-all duration-300 hover:scale-105 cursor-zoom-in';
             
-            img.onclick = () => {
-                const modal = document.getElementById('imageModal');
-                const modalImage = document.getElementById('modalImage');
-                modalImage.src = imageUrl;
-                modal.classList.remove('hidden');
-            };
+            img.onclick = () => openModal(imageUrl);
+            container.appendChild(img);
+            return container;
+        }
 
-            return img;
+        function openModal(imageUrl) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = imageUrl;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+            document.body.style.overflow = '';
         }
 
         async function initialize() {
@@ -1271,34 +1318,29 @@ def profile_page():
             try {
                 const data = await fetchProfileWithImages(email);
 
-                // Update profile information
                 document.getElementById('userName').textContent = data.userName;
                 document.getElementById('userEmail').textContent = email;
                 if (data.profileImageUrl) {
                     document.getElementById('profileImage').src = data.profileImageUrl;
                 }
 
-                // Create image grid
                 const imageGrid = document.getElementById('imageGrid');
                 data.images.forEach((imageUrl, index) => {
                     imageGrid.appendChild(createImageElement(imageUrl, index));
                 });
 
-                // Hide loading, show content
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('content').classList.remove('hidden');
-
-                // Setup modal close behavior
-                document.getElementById('imageModal').onclick = function(e) {
-                    if (e.target === this) {
-                        this.classList.add('hidden');
-                    }
-                };
 
             } catch (error) {
                 showError('Errore nel caricamento dei dati');
             }
         }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
 
         initialize();
     </script>
