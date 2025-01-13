@@ -1135,7 +1135,7 @@ def delete_event():
     
 
 
-@app.route('/profilePage', methods=['GET'])
+@app.route('/profilePage', methods=['GET', 'POST']) 
 def profile_page():
     email = request.args.get('email')
     if not email:
