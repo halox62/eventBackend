@@ -245,9 +245,7 @@ firebase_admin.initialize_app(cred, {
 bucket = storage.bucket()
 
 
-@app.route('/')
-def healthcheck():
-    return 'OK', 200
+
 
 # Endpoint per caricare l'immagine
 @app.route('/upload', methods=['POST'])

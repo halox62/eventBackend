@@ -3,6 +3,6 @@ builder = "nixpacks"
 buildCommand = "pip install -r requirements.txt"
 
 [deploy]
-startCommand = "cat app.py && gunicorn app:app"
+startCommand = "gunicorn app:app"
 healthcheckPath = "/"
 restartPolicyType = "ON_FAILURE"
