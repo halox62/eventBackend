@@ -1178,85 +1178,107 @@ def profile_page():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profilo Utente</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:,">
     <style>
+        :root {
+            --surface-variant: #f5f5f5;
+            --primary-green: rgb(76, 175, 80);
+        }
+        
         body {
-            font-family: 'Inter', sans-serif;
+            background-color: white;
         }
-        .image-grid-item {
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding: 0 16px;
+        }
+
+        .grid-item {
+            position: relative;
             aspect-ratio: 1;
-            height: 140px;
+            border-radius: 16px;
+            overflow: hidden;
+            background-color: var(--surface-variant);
         }
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
+
+        .delete-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 8px;
+            border-radius: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+
+        .delete-button:hover {
+            background-color: rgba(0, 0, 0, 0.7);
         }
-        .modal-image {
+
+        .points-badge {
+            background-color: var(--primary-green);
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            display: inline-block;
+        }
+
+        .profile-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #imageModal {
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .modal-content {
             max-height: 90vh;
             max-width: 90vw;
-        }
-        #imageGrid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 8px;
+            object-fit: contain;
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
-    <div class="min-h-screen">
-        <header class="bg-white border-b border-gray-200">
-            <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-                <h1 class="text-xl font-semibold tracking-tight">Profilo</h1>
-                <button onclick="history.back()" class="text-gray-600 hover:text-gray-900 transition-colors">
-                    ← Indietro
-                </button>
-            </div>
-        </header>
-
-        <div id="loading" class="flex items-center justify-center min-h-[60vh]">
-            <div class="animate-spin rounded-full h-8 w-8 border-2 border-gray-900 border-t-transparent"></div>
-        </div>
-
-        <div id="error" class="hidden max-w-md mx-auto mt-8 p-4 bg-red-50 text-red-600 rounded-lg text-center"></div>
-
-        <main id="content" class="container mx-auto px-4 py-6 hidden fade-in">
-            <div class="max-w-4xl mx-auto">
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-                    <div class="flex items-start space-x-4">
-                        <div class="relative flex-shrink-0">
-                            <img id="profileImage" 
-                                 class="w-16 h-16 rounded-full object-cover ring-2 ring-gray-100"
-                                 src=""
-                                 alt="Profile"
-                                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM6 12a6 6 0 1 1 12 0v1H6v-1zm0 3h12v1a7 7 0 1 1-14 0v-1z%22/></svg>'">
-                        </div>
-                        <div class="flex-1">
-                            <h2 id="userName" class="text-xl font-semibold leading-tight mb-1"></h2>
-                            <p id="userEmail" class="text-gray-500 text-sm"></p>
-                        </div>
+<body>
+    <div class="min-h-screen pb-6">
+        <div class="p-6">
+            <div class="flex items-start space-x-5">
+                <div class="flex-shrink-0">
+                    <img id="profileImage" 
+                         class="profile-image"
+                         src=""
+                         alt="Profile"
+                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM6 12a6 6 0 1 1 12 0v1H6v-1z%22/></svg>'">
+                </div>
+                <div class="flex-1">
+                    <h1 id="userName" class="text-xl font-bold mb-2"></h1>
+                    <div class="points-badge">
+                        <span id="points">0 points</span>
                     </div>
                 </div>
-
-                <div class="space-y-4">
-                    <h3 class="text-sm font-medium text-gray-900 mb-2">Foto</h3>
-                    <div id="imageGrid"></div>
-                </div>
-            </main>
+            </div>
         </div>
 
-        <div id="imageModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50">
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            <img id="modalImage" class="modal-image object-contain fade-in" src="" alt="Enlarged image">
+        <div id="imageGrid" class="image-grid"></div>
+
+        <div id="emptyState" class="hidden text-center mt-20">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900">Nessuna foto disponibile</h3>
+            <p class="mt-2 text-gray-500">Inizia a catturare un outfit accattivante, scala le classifiche</p>
         </div>
+    </div>
+
+    <div id="imageModal" class="hidden fixed inset-0 z-50 flex items-center justify-center" onclick="this.classList.add('hidden')">
+        <img id="modalImage" class="modal-content" src="" alt="Enlarged image">
     </div>
 
     <script>
@@ -1266,50 +1288,46 @@ def profile_page():
                     method: 'GET'
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to load profile and images');
-                }
-
-                const data = await response.json();
-                return data;
+                if (!response.ok) throw new Error('Failed to load profile');
+                return await response.json();
             } catch (error) {
-                console.error('Error fetching profile and images:', error);
+                console.error('Error:', error);
                 throw error;
             }
         }
 
-        function showError(message) {
-            document.getElementById('loading').classList.add('hidden');
-            const errorElement = document.getElementById('error');
-            errorElement.textContent = message;
-            errorElement.classList.remove('hidden');
-        }
-
         function createImageElement(imageUrl, index) {
-            const container = document.createElement('div');
-            container.className = 'image-grid-item bg-gray-100 rounded-md overflow-hidden';
+            const div = document.createElement('div');
+            div.className = 'grid-item';
             
             const img = document.createElement('img');
             img.src = imageUrl;
-            img.alt = `Image ${index + 1}`;
-            img.className = 'w-full h-full object-cover transition-all duration-200 hover:opacity-90 cursor-zoom-in';
-            
-            img.onclick = () => openModal(imageUrl);
-            container.appendChild(img);
-            return container;
-        }
+            img.className = 'w-full h-full object-cover';
+            img.onclick = () => {
+                document.getElementById('imageModal').classList.remove('hidden');
+                document.getElementById('modalImage').src = imageUrl;
+            };
 
-        function openModal(imageUrl) {
-            const modal = document.getElementById('imageModal');
-            const modalImage = document.getElementById('modalImage');
-            modalImage.src = imageUrl;
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-button';
+            deleteButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            `;
+            deleteButton.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm('Vuoi eliminare questa foto?')) {
+                    div.remove();
+                    if (document.getElementById('imageGrid').children.length === 0) {
+                        document.getElementById('emptyState').classList.remove('hidden');
+                    }
+                }
+            };
 
-        function closeModal() {
-            document.getElementById('imageModal').classList.add('hidden');
-            document.body.style.overflow = '';
+            div.appendChild(img);
+            div.appendChild(deleteButton);
+            return div;
         }
 
         async function initialize() {
@@ -1317,35 +1335,31 @@ def profile_page():
             const email = urlParams.get('email');
 
             if (!email) {
-                showError('Email mancante nella URL');
+                console.error('Email mancante');
                 return;
             }
 
             try {
                 const data = await fetchProfileWithImages(email);
-
-                document.getElementById('userName').textContent = data.userName;
-                document.getElementById('userEmail').textContent = email;
+                
+                document.getElementById('userName').textContent = data.userName || 'Unknown User';
+                document.getElementById('points').textContent = `${data.point || 0} points`;
                 if (data.profileImageUrl) {
                     document.getElementById('profileImage').src = data.profileImageUrl;
                 }
 
                 const imageGrid = document.getElementById('imageGrid');
-                data.images.forEach((imageUrl, index) => {
-                    imageGrid.appendChild(createImageElement(imageUrl, index));
-                });
-
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('content').classList.remove('hidden');
-
+                if (data.images && data.images.length > 0) {
+                    data.images.forEach((imageUrl, index) => {
+                        imageGrid.appendChild(createImageElement(imageUrl, index));
+                    });
+                } else {
+                    document.getElementById('emptyState').classList.remove('hidden');
+                }
             } catch (error) {
-                showError('Errore nel caricamento dei dati');
+                console.error('Error initializing:', error);
             }
         }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeModal();
-        });
 
         initialize();
     </script>
