@@ -630,6 +630,11 @@ def addEvent():
         event = Event.query.filter_by(eventCode=code).first()
         if not event:
             return jsonify({'message': 'Invalid event code'}), 404
+        
+        subscribeUser = EventSubscibe.query.filter_by(emailUser=email, eventCode=code).first()
+        if subscribeUser:
+            return jsonify({'message': 'Registration already completed'}), 400
+
 
        
         subscribeUser = EventSubscibe.query.filter_by(emailUser=email, eventCode=code).first()
