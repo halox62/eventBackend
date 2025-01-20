@@ -108,6 +108,7 @@ def firebase_required(f):
 def update_event_rankings():
     with app.app_context():
         events = Event.query.filter(
+            #calcolare un evento una sola volta
             or_(
                 Event.endDate > datetime.now().date(),
                 and_(
@@ -125,6 +126,7 @@ def update_event_rankings():
             for index, photo in enumerate(sorted_photos):
                 user = UserAccount.query.filter_by(emailUser=photo.emailUser).first()
                 if user:
+                    #bool status= EventSubscibe.query.filter_by(emailUser=user.emailUser, position="true")
                     score_multiplier = 100 - index if index < 100 else 1
                     event_points = score_multiplier * photo.likes
                     user.point += event_points
@@ -1059,22 +1061,17 @@ def delete_photo_by_url():
             
             check_photo = FileRecord.query.filter_by(id=real_photo_id).first()
             if check_photo is not None:
-                print("ERRORE: La foto esiste ancora dopo l'eliminazione!")
                 return jsonify({'error': 'Impossibile eliminare la foto'}), 500
             
-            print("Foto eliminata con successo")
-
-            try:
-                import urllib.parse
-                decoded_url = urllib.parse.unquote(photo_url)
-                file_name = decoded_url.split('outfitsocial-a6124.appspot.com/')[1]
-                
-                bucket = storage.bucket()
-                blob = bucket.blob(file_name)
-                if blob.exists():
-                    blob.delete()
-            except Exception as e:
-                print(f"Errore durante l'eliminazione del blob: {str(e)}")
+    
+            import urllib.parse
+            decoded_url = urllib.parse.unquote(photo_url)
+            file_name = decoded_url.split('outfitsocial-a6124.appspot.com/')[1]
+            
+            bucket = storage.bucket()
+            blob = bucket.blob(file_name)
+            if blob.exists():
+                blob.delete()
 
             return jsonify({'message':"ok"}), 200
 
@@ -1127,7 +1124,6 @@ def creator():
         if not email:
             return jsonify({"msg": "Utente non autenticato"}), 401
         
-
         event = Event.query.filter(Event.emailUser == email, Event.create == "yes").first()
         if not event:
             return jsonify({"msg": "not creator"}), 400
