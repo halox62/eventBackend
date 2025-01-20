@@ -286,7 +286,9 @@ def upload_image():
         return jsonify({'error': str(e)}), 500
 
 
-
+@app.route('/login', methods=['POST'])
+def login():
+    return jsonify({"login": "ok"}), 200
 
 
 @app.route('/register', methods=['POST'])
@@ -1371,4 +1373,4 @@ def profile_page():
     return render_template_string(html_template)
 
 if __name__ == '__main__':
-    app.run(host = 'localhost', port = 8080, debug = True)                                                                                                                                                                                                                                                                                        
+    app.run(host = 'localhost', port = 8080, debug = True)    
