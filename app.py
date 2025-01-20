@@ -1051,15 +1051,11 @@ def delete_photo_by_url():
             for like in likes:
                 db.session.delete(like)
 
-            db.session.flush()
-
-            FileRecord.query.filter_by(id=real_photo_id).delete()
-            
-            db.session.flush()
+            FileRecord.query.filter_by(id=photo.id).delete()
             
             db.session.commit()
             
-            check_photo = FileRecord.query.filter_by(id=real_photo_id).first()
+            check_photo = FileRecord.query.filter_by(id=photo.id).first()
             if check_photo is not None:
                 return jsonify({'error': 'Impossibile eliminare la foto'}), 500
             
