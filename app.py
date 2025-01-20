@@ -25,6 +25,7 @@ import firebase_admin
 from firebase_admin import credentials, auth
 import os
 from dotenv import load_dotenv
+import urllib.parse
 
 
 #psql -U postgres
@@ -1043,9 +1044,8 @@ def delete_photo_by_url():
         if not photo:
             return jsonify({'error': 'Foto non trovata nel database'}), 404
 
-        real_photo_id = photo.id - 1
        
-        likes = LikePhoto.query.filter_by(file_id=real_photo_id).all()
+        likes = LikePhoto.query.filter_by(file_id=photo.id).all()
      
         try:
             for like in likes:
@@ -1059,8 +1059,7 @@ def delete_photo_by_url():
             if check_photo is not None:
                 return jsonify({'error': 'Impossibile eliminare la foto'}), 500
             
-    
-            import urllib.parse
+
             decoded_url = urllib.parse.unquote(photo_url)
             file_name = decoded_url.split('outfitsocial-a6124.appspot.com/')[1]
             
