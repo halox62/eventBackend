@@ -286,13 +286,7 @@ def upload_image():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/login', methods=['POST'])
-def login():
-    email = request.json.get('email')
 
-    access_token = create_access_token(identity={'email': email})
-
-    return jsonify(access_token=access_token)
 
 
 @app.route('/register', methods=['POST'])
@@ -320,9 +314,7 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        access_token = create_access_token(identity={'email': email})
-
-        return jsonify(access_token=access_token)
+        return jsonify({"register": "ok"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
     
@@ -1379,4 +1371,4 @@ def profile_page():
     return render_template_string(html_template)
 
 if __name__ == '__main__':
-    app.run(host = 'localhost', port = 8080, debug = True)    
+    app.run(host = 'localhost', port = 8080, debug = True)                                                                                                                                                                                                                                                                                        
