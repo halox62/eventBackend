@@ -375,8 +375,7 @@ def apply_penalty(user, event_points: int):
         print(f"Applied penalty of {penalty_points} points")
 
 scheduler = BackgroundScheduler()
-#scheduler.add_job(update_event_rankings, 'cron', hour=0, minute=0)
-scheduler.add_job(update_event_rankings, 'date', run_date=datetime.now() + timedelta(seconds=10))
+scheduler.add_job(update_event_rankings, 'cron', hour=0, minute=0)
 scheduler.start()
 
 
