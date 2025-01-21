@@ -1,7 +1,6 @@
 import json
 from operator import and_, or_
 from sqlite3 import IntegrityError
-from xml.dom.pulldom import _Event
 from flask import Flask, request, jsonify, render_template_string
 from flask_sqlalchemy import SQLAlchemy
 import firebase_admin
@@ -13,7 +12,7 @@ from celery import Celery
 from datetime import timedelta
 from celery.schedules import crontab
 from datetime import datetime
-from sqlalchemy import and_, func, or_
+from sqlalchemy import and_, func
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import requests
@@ -27,9 +26,7 @@ from firebase_admin import credentials, auth
 import os
 from dotenv import load_dotenv
 import urllib.parse
-from datetime import datetime
-from typing import List
-from models import db, FileRecord, UserAccount, Event, EventSubscibe, LikePhoto 
+
 
 #psql -U postgres
 
@@ -107,6 +104,53 @@ def firebase_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+
+def update_event_rankings():
+    with app.app_context():
+        events = Event.query.filter(
+            #calcolare un evento una sola volta
+            or_(
+                Event.endDate > datetime.now().date(),
+                and_(
+                    Event.endDate == datetime.now().date(),
+                    Event.endTime >= datetime.now().time()
+                )
+            )
+        ).all()
+        for event in events:
+            print(f"Processing event: {event.eventCode}")
+            
+            photos = FileRecord.query.filter_by(code=event.eventCode).all()
+            sorted_photos = sorted(photos, key=lambda x: x.likes, reverse=True)
+            
+            for index, photo in enumerate(sorted_photos):
+                user = UserAccount.query.filter_by(emailUser=photo.emailUser).first()
+                if user:
+                    #bool status= EventSubscibe.query.filter_by(emailUser=user.emailUser, position="true")
+                    score_multiplier = 100 - index if index < 100 else 1
+                    event_points = score_multiplier * photo.likes
+                    user.point += event_points
+                    print(f"Updated {user.emailUser} score by {event_points} points for event {event.eventCode}")
+                    apply_penalty(user, event_points)
+
+            db.session.commit()
+
+        print("Event ranking update and penalty calculation complete.")
+
+def apply_penalty(user, event_points):
+    # Soglia di prestazione minima come percentuale del punteggio totale
+    performance_threshold = 0.1  # 10% del punteggio totale
+    min_required_points = user.point * performance_threshold
+
+    if event_points < min_required_points:
+        penalty_points = int((min_required_points - event_points) * 0.5)  # Penalità del 50% dei punti mancanti
+        user.point -= penalty_points
+        print(f"Applied penalty of {penalty_points} to {user.emailUser} due to low event performance.")
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(update_event_rankings, 'cron', hour=0, minute=0)
+scheduler.start()
   
 # Prendi l'URL del database dalle variabili d'ambiente
 DATABASE_URL = os.environ.get('DATABASE_URL')  
@@ -204,143 +248,6 @@ firebase_admin.initialize_app(cred, {
 bucket = storage.bucket()
 
 
-def update_event_rankings():
-    """
-    Aggiorna i ranking degli eventi terminati e calcola i punti finali per gli utenti
-    basandosi sulle foto caricate e i loro like.
-    """
-    with app.app_context():
-        try:
-            # Ottieni solo gli eventi che sono terminati
-            current_datetime = datetime.now()
-            completed_events = Event.query.filter(
-                or_(
-                    Event.endDate < current_datetime.date(),
-                    and_(
-                        Event.endDate == current_datetime.date(),
-                        Event.endTime < current_datetime.time()
-                    )
-                )
-            ).all()
-            
-            if not completed_events:
-                print("No completed events found to process")
-                return
-                
-            for event in completed_events:
-                print(f"Processing completed event: {event.eventCode}")
-                
-                # Ottieni tutti gli utenti iscritti all'evento con position=true
-                subscribed_users = EventSubscibe.query.filter_by(
-                    eventCode=event.eventCode,
-                    position="true"
-                ).all()
-                
-                if not subscribed_users:
-                    print(f"No subscribed users found for event {event.eventCode}")
-                    continue
-                
-                # Crea un set di email degli utenti iscritti per ricerca veloce
-                subscribed_emails = {sub.emailUser for sub in subscribed_users}
-                
-                # Ottieni e processa le foto solo degli utenti iscritti
-                process_event_photos(event, subscribed_emails)
-                
-            db.session.commit()
-            print("Completed events ranking update finished")
-            
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error during ranking update: {str(e)}")
-            raise
-
-def process_event_photos(event: Event, subscribed_emails: set):
-    """
-    Processa le foto per un evento terminato, considerando solo gli utenti iscritti.
-    """
-    # Ottieni le foto con il conteggio dei like solo per gli utenti iscritti
-    photos_with_likes = db.session.query(
-        FileRecord,
-        func.count(LikePhoto.id).label('likes_count')
-    ).outerjoin(
-        LikePhoto,
-        LikePhoto.file_id == FileRecord.id
-    ).filter(
-        FileRecord.code == event.eventCode,
-        FileRecord.emailUser.in_(subscribed_emails)
-    ).group_by(
-        FileRecord.id
-    ).all()
-    
-    if not photos_with_likes:
-        print(f"No photos found for completed event {event.eventCode}")
-        return
-    
-    # Ordina le foto per numero di like
-    sorted_photos = sorted(photos_with_likes, key=lambda x: x.likes_count, reverse=True)
-    
-    # Processa ogni foto e aggiorna i punti
-    for index, (photo, likes_count) in enumerate(sorted_photos):
-        update_user_points(photo, index, likes_count)
-
-def update_user_points(photo: FileRecord, index: int, likes_count: int):
-    """
-    Aggiorna i punti dell'utente basandosi sulla performance della sua foto.
-    """
-    user = UserAccount.query.filter_by(emailUser=photo.emailUser).first()
-    if not user:
-        print(f"User not found for email: {photo.emailUser}")
-        return
-    
-    # Calcola i punti
-    score_multiplier = calculate_multiplier(index)
-    event_points = score_multiplier * likes_count
-    
-    # Converti i punti attuali da string a int
-    current_points = int(user.point) if user.point and user.point.isdigit() else 0
-    
-    # Aggiorna i punti dell'utente
-    user.point = str(current_points + event_points)
-    print(f"Updated {user.emailUser} score by {event_points} points")
-    
-    # Aggiorna i punti della foto
-    photo.point = str(event_points)
-    
-    # Applica penalità se necessario
-    apply_penalty(user, event_points)
-
-def calculate_multiplier(index: int) -> int:
-    """
-    Calcola il moltiplicatore di punteggio basato sulla posizione.
-    """
-    return 100 - index if index < 100 else 1
-
-def apply_penalty(user: UserAccount, event_points: int):
-    """
-    Applica una penalità se la performance è sotto la soglia minima.
-    """
-    PERFORMANCE_THRESHOLD = 0.1  # 10% del punteggio totale
-    PENALTY_RATE = 0.5  # 50% dei punti mancanti
-    
-    current_points = int(user.point) if user.point and user.point.isdigit() else 0
-    min_required_points = current_points * PERFORMANCE_THRESHOLD
-    
-    if event_points < min_required_points:
-        penalty_points = int((min_required_points - event_points) * PENALTY_RATE)
-        new_points = max(0, current_points - penalty_points)  # Evita punti negativi
-        user.point = str(new_points)
-        print(f"Applied penalty of {penalty_points} points")
-'''
-scheduler = BackgroundScheduler()
-scheduler.add_job(update_event_rankings, 'cron', hour=0, minute=0)
-scheduler.start()
-
-'''
-scheduler = BackgroundScheduler()
-scheduler.add_job(update_event_rankings, 'date', run_date=datetime.now() + timedelta(seconds=10))
-scheduler.start()
-
-
 @app.route('/')
 def healthcheck():
     return 'OK', 200
@@ -381,7 +288,11 @@ def upload_image():
 
 @app.route('/login', methods=['POST'])
 def login():
-    return jsonify({"login": "ok"}), 200
+    email = request.json.get('email')
+
+    access_token = create_access_token(identity={'email': email})
+
+    return jsonify(access_token=access_token)
 
 
 @app.route('/register', methods=['POST'])
@@ -409,7 +320,9 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        return jsonify({"register": "ok"}), 200
+        access_token = create_access_token(identity={'email': email})
+
+        return jsonify(access_token=access_token)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
     
@@ -1130,36 +1043,37 @@ def delete_photo_by_url():
         photo = FileRecord.query.filter_by(file_url=photo_url).first()
         if not photo:
             return jsonify({'error': 'Foto non trovata nel database'}), 404
-
        
         likes = LikePhoto.query.filter_by(file_id=photo.id).all()
      
-        try:
-            for like in likes:
-                db.session.delete(like)
+        for like in likes:
+            db.session.delete(like)
 
-            FileRecord.query.filter_by(id=photo.id).delete()
-            
-            db.session.commit()
-            
-            check_photo = FileRecord.query.filter_by(id=photo.id).first()
-            if check_photo is not None:
-                return jsonify({'error': 'Impossibile eliminare la foto'}), 500
-            
+        db.session.flush()
 
-            decoded_url = urllib.parse.unquote(photo_url)
-            file_name = decoded_url.split('outfitsocial-a6124.appspot.com/')[1]
+        FileRecord.query.filter_by(id=photo.id).delete()
+        
+        db.session.flush()
+        
+        db.session.commit()
+        
+        check_photo = FileRecord.query.filter_by(id=photo.id).first()
+        if check_photo is not None:
+            return jsonify({'error': 'Impossibile eliminare la foto'}), 500
+        
+
             
-            bucket = storage.bucket()
-            blob = bucket.blob(file_name)
-            if blob.exists():
-                blob.delete()
+        decoded_url = urllib.parse.unquote(photo_url)
+        file_name = decoded_url.split('outfitsocial-a6124.appspot.com/')[1]
+        
+        bucket = storage.bucket()
+        blob = bucket.blob(file_name)
+        if blob.exists():
+            blob.delete()
+        
 
-            return jsonify({'message':"ok"}), 200
+        return jsonify({'message':"ok"}), 200
 
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({'error': 'Errore durante l\'eliminazione', 'details': str(e)}), 500
 
     except Exception as e:
         return jsonify({'error': 'Errore generico', 'details': str(e)}), 500
