@@ -252,49 +252,50 @@ def update_event_rankings():
     Aggiorna i ranking degli eventi terminati e calcola i punti finali per gli utenti
     basandosi sulle foto caricate e i loro like.
     """
-    try:
-        # Ottieni solo gli eventi che sono terminati
-        current_datetime = datetime.now()
-        completed_events = Event.query.filter(
-            or_(
-                Event.endDate < current_datetime.date(),
-                and_(
-                    Event.endDate == current_datetime.date(),
-                    Event.endTime < current_datetime.time()
+    with app.app_context(): 
+        try:
+            # Ottieni solo gli eventi che sono terminati
+            current_datetime = datetime.now()
+            completed_events = Event.query.filter(
+                or_(
+                    Event.endDate < current_datetime.date(),
+                    and_(
+                        Event.endDate == current_datetime.date(),
+                        Event.endTime < current_datetime.time()
+                    )
                 )
-            )
-        ).all()
-        
-        if not completed_events:
-            print("No completed events found to process")
-            return
-            
-        for event in completed_events:
-            print(f"Processing completed event: {event.eventCode}")
-            
-            # Ottieni tutti gli utenti iscritti all'evento con position=true
-            subscribed_users = EventSubscibe.query.filter_by(
-                eventCode=event.eventCode,
-                position="true"
             ).all()
             
-            if not subscribed_users:
-                print(f"No subscribed users found for event {event.eventCode}")
-                continue
+            if not completed_events:
+                print("No completed events found to process")
+                return
+                
+            for event in completed_events:
+                print(f"Processing completed event: {event.eventCode}")
+                
+                # Ottieni tutti gli utenti iscritti all'evento con position=true
+                subscribed_users = EventSubscibe.query.filter_by(
+                    eventCode=event.eventCode,
+                    position="true"
+                ).all()
+                
+                if not subscribed_users:
+                    print(f"No subscribed users found for event {event.eventCode}")
+                    continue
+                
+                # Crea un set di email degli utenti iscritti per ricerca veloce
+                subscribed_emails = {sub.emailUser for sub in subscribed_users}
+                
+                # Ottieni e processa le foto solo degli utenti iscritti
+                process_event_photos(event, subscribed_emails)
+                
+            db.session.commit()
+            print("Completed events ranking update finished")
             
-            # Crea un set di email degli utenti iscritti per ricerca veloce
-            subscribed_emails = {sub.emailUser for sub in subscribed_users}
-            
-            # Ottieni e processa le foto solo degli utenti iscritti
-            process_event_photos(event, subscribed_emails)
-            
-        db.session.commit()
-        print("Completed events ranking update finished")
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error during ranking update: {str(e)}")
-        raise
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error during ranking update: {str(e)}")
+            raise
 
 def process_event_photos(event, subscribed_emails: set):
     """
