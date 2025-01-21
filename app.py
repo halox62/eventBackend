@@ -1315,9 +1315,8 @@ def profile_page():
 
         body {
             background-color: #fafafa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: block; /* Cambiato da flex a block */
+            padding: 20px 0; /* Spazio dal top */
             min-height: 100vh;
         }
 
@@ -1337,6 +1336,7 @@ def profile_page():
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: transform 0.3s ease; /* Animazione al clic */
         }
 
         .grid-item img {
@@ -1346,15 +1346,23 @@ def profile_page():
         }
 
         #imageModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background-color: rgba(0, 0, 0, 0.9);
-            display: none;
+            display: none; /* Modale nascosta di default */
+            align-items: center;
+            justify-content: center;
         }
 
-        .modal-content {
+        #imageModal img {
             max-height: 80vh;
             max-width: 80vw;
             object-fit: contain;
             border-radius: 8px;
+            transition: transform 0.3s ease;
         }
 
         .loading-spinner {
@@ -1378,6 +1386,7 @@ def profile_page():
 </head>
 <body>
     <div class="main-container px-4">
+        <!-- Profilo utente -->
         <div class="profile-card p-6 mb-6">
             <div class="flex items-center space-x-6">
                 <div class="flex-shrink-0">
@@ -1396,13 +1405,16 @@ def profile_page():
             </div>
         </div>
 
+        <!-- Spinner di caricamento -->
         <div id="loadingSpinner" class="text-center hidden">
             <div class="loading-spinner mx-auto"></div>
             <p class="mt-3 text-gray-500">Caricamento...</p>
         </div>
 
-        <div id="imageGrid" class="image-grid grid grid-cols-4 gap-4"></div>
+        <!-- Griglia immagini -->
+        <div id="imageGrid" class="grid grid-cols-4 gap-4"></div>
 
+        <!-- Stato vuoto -->
         <div id="emptyState" class="hidden text-center mt-20">
             <svg class="w-20 h-20 mx-auto mb-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -1412,8 +1424,9 @@ def profile_page():
         </div>
     </div>
 
-    <div id="imageModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" aria-hidden="true">
-        <img id="modalImage" class="modal-content" src="" alt="Immagine ingrandita">
+    <!-- Modale immagine -->
+    <div id="imageModal" class="fixed inset-0 flex items-center justify-center z-50">
+        <img id="modalImage" src="" alt="Immagine ingrandita">
     </div>
 
     <script>
@@ -1434,13 +1447,21 @@ def profile_page():
             const img = document.createElement('img');
             img.src = imageUrl;
             img.alt = 'Foto';
-            img.onclick = () => {
-                const modal = document.getElementById('imageModal');
-                modal.style.display = 'flex';
-                document.getElementById('modalImage').src = imageUrl;
-            };
+            img.onclick = () => toggleModal(imageUrl);
             div.appendChild(img);
             return div;
+        }
+
+        function toggleModal(imageUrl) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+                modalImage.src = '';
+            } else {
+                modal.style.display = 'flex';
+                modalImage.src = imageUrl;
+            }
         }
 
         async function initialize() {
