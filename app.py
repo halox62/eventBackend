@@ -107,6 +107,102 @@ def firebase_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+  
+# Prendi l'URL del database dalle variabili d'ambiente
+DATABASE_URL = os.environ.get('DATABASE_URL')  
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Configura il database
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL  
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Inizializza il database
+db = SQLAlchemy(app)
+
+
+# Modello per il file caricato
+class FileRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    userName = db.Column(db.String(80), nullable=False)  
+    emailUser = db.Column(db.String(120), nullable=False)
+    filename = db.Column(db.String(100), nullable=False)
+    file_url = db.Column(db.String(200), nullable=False)
+    code = db.Column(db.String(200), nullable=False)
+    point = db.Column(db.String(200), nullable=False)
+
+    def __repr__(self):
+        return f'<FileRecord {self.filename}>'
+
+# Modello per gli utenti
+class UserAccount(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    emailUser = db.Column(db.String(120), unique=True, nullable=False)
+    userName = db.Column(db.String(80), nullable=False)  
+    profileImageUrl = db.Column(db.String(200), nullable=True)
+    point = db.Column(db.String(200), nullable=True)
+
+# Mi piace
+class LikePhoto(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    emailUser = db.Column(db.String(120), nullable=False)
+    file_id = db.Column(db.Integer, db.ForeignKey('file_record.id'), nullable=False)
+    __table_args__ = (db.UniqueConstraint('emailUser', 'file_id', name='_user_file_like'),)
+
+# Modello per gli eventi
+class Event(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    eventName = db.Column(db.String(120), nullable=False)
+    emailUser = db.Column(db.String(120), nullable=False)
+    eventCode = db.Column(db.String(80), nullable=False)  
+    eventDate = db.Column(db.Date, nullable=False)
+    endDate = db.Column(db.Date, nullable=False)  
+    endTime = db.Column(db.Time, nullable=False)  
+    latitudine = db.Column(db.String(255), nullable=False) 
+    longitude = db.Column(db.String(255), nullable=False) 
+    create = db.Column(db.String(80), nullable=False) 
+
+class EventSubscibe(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    emailUser = db.Column(db.String(120), nullable=False)
+    eventCode = db.Column(db.String(80), nullable=False)  
+    position = db.Column(db.String(80), nullable=False) 
+
+
+# Crea tutte le tabelle definite dai modelli nel database
+with app.app_context():
+    db.create_all()
+
+
+firebase_credentials = {
+    "type": os.getenv("FIREBASE_TYPE"),
+    "project_id": os.getenv("FIREBASE_PROJECT_ID"),
+    "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
+    "private_key": os.getenv("FIREBASE_PRIVATE_KEY").replace("\\n", "\n"),
+    "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
+    "client_id": os.getenv("FIREBASE_CLIENT_ID"),
+    "auth_uri": os.getenv("FIREBASE_AUTH_URI"),
+    "token_uri": os.getenv("FIREBASE_TOKEN_URI"),
+    "auth_provider_x509_cert_url": os.getenv("FIREBASE_AUTH_PROVIDER_X509_CERT_URL"),
+    "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_X509_CERT_URL"),
+    "universe_domain": "googleapis.com"
+}
+
+
+# Inizializza Firebase Admin SDK con il file di credenziali
+# Recupera le credenziali dal file .env
+#firebase_credentials = os.getenv("FIREBASE_CREDENTIALS")
+firebase_bucket = os.getenv("FIREBASE_BUCKET")
+
+
+# Inizializza Firebase con le credenziali
+cred = credentials.Certificate(firebase_credentials)
+firebase_admin.initialize_app(cred, {
+    'storageBucket': firebase_bucket
+})
+
+bucket = storage.bucket()
+
 
 def update_event_rankings():
     """
@@ -243,101 +339,6 @@ scheduler.start()
 scheduler = BackgroundScheduler()
 scheduler.add_job(update_event_rankings, 'date', run_date=datetime.now() + timedelta(seconds=10))
 scheduler.start()
-  
-# Prendi l'URL del database dalle variabili d'ambiente
-DATABASE_URL = os.environ.get('DATABASE_URL')  
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-# Configura il database
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL  
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Inizializza il database
-db = SQLAlchemy(app)
-
-
-# Modello per il file caricato
-class FileRecord(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    userName = db.Column(db.String(80), nullable=False)  
-    emailUser = db.Column(db.String(120), nullable=False)
-    filename = db.Column(db.String(100), nullable=False)
-    file_url = db.Column(db.String(200), nullable=False)
-    code = db.Column(db.String(200), nullable=False)
-    point = db.Column(db.String(200), nullable=False)
-
-    def __repr__(self):
-        return f'<FileRecord {self.filename}>'
-
-# Modello per gli utenti
-class UserAccount(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    emailUser = db.Column(db.String(120), unique=True, nullable=False)
-    userName = db.Column(db.String(80), nullable=False)  
-    profileImageUrl = db.Column(db.String(200), nullable=True)
-    point = db.Column(db.String(200), nullable=True)
-
-# Mi piace
-class LikePhoto(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    emailUser = db.Column(db.String(120), nullable=False)
-    file_id = db.Column(db.Integer, db.ForeignKey('file_record.id'), nullable=False)
-    __table_args__ = (db.UniqueConstraint('emailUser', 'file_id', name='_user_file_like'),)
-
-# Modello per gli eventi
-class Event(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    eventName = db.Column(db.String(120), nullable=False)
-    emailUser = db.Column(db.String(120), nullable=False)
-    eventCode = db.Column(db.String(80), nullable=False)  
-    eventDate = db.Column(db.Date, nullable=False)
-    endDate = db.Column(db.Date, nullable=False)  
-    endTime = db.Column(db.Time, nullable=False)  
-    latitudine = db.Column(db.String(255), nullable=False) 
-    longitude = db.Column(db.String(255), nullable=False) 
-    create = db.Column(db.String(80), nullable=False) 
-
-class EventSubscibe(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    emailUser = db.Column(db.String(120), nullable=False)
-    eventCode = db.Column(db.String(80), nullable=False)  
-    position = db.Column(db.String(80), nullable=False) 
-
-
-# Crea tutte le tabelle definite dai modelli nel database
-with app.app_context():
-    db.create_all()
-
-
-firebase_credentials = {
-    "type": os.getenv("FIREBASE_TYPE"),
-    "project_id": os.getenv("FIREBASE_PROJECT_ID"),
-    "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
-    "private_key": os.getenv("FIREBASE_PRIVATE_KEY").replace("\\n", "\n"),
-    "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
-    "client_id": os.getenv("FIREBASE_CLIENT_ID"),
-    "auth_uri": os.getenv("FIREBASE_AUTH_URI"),
-    "token_uri": os.getenv("FIREBASE_TOKEN_URI"),
-    "auth_provider_x509_cert_url": os.getenv("FIREBASE_AUTH_PROVIDER_X509_CERT_URL"),
-    "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_X509_CERT_URL"),
-    "universe_domain": "googleapis.com"
-}
-
-
-# Inizializza Firebase Admin SDK con il file di credenziali
-# Recupera le credenziali dal file .env
-#firebase_credentials = os.getenv("FIREBASE_CREDENTIALS")
-firebase_bucket = os.getenv("FIREBASE_BUCKET")
-
-
-# Inizializza Firebase con le credenziali
-cred = credentials.Certificate(firebase_credentials)
-firebase_admin.initialize_app(cred, {
-    'storageBucket': firebase_bucket
-})
-
-bucket = storage.bucket()
 
 
 @app.route('/')
