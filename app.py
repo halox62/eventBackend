@@ -1306,43 +1306,25 @@ def profile_page():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profilo Utente</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         :root {
             --surface-variant: #f5f5f5;
             --primary-green: rgb(76, 175, 80);
         }
-        
+
         body {
             background-color: #fafafa;
             display: flex;
             justify-content: center;
+            align-items: center;
             min-height: 100vh;
         }
 
-        .main-container {
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .profile-section {
+        .profile-card {
             background-color: white;
             border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            margin-bottom: 24px;
-            width: 100%;
-        }
-
-        .image-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
         .grid-item {
@@ -1361,29 +1343,11 @@ def profile_page():
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            padding: 4px;
-        }
-
-        .points-badge {
-            background-color: var(--primary-green);
-            padding: 8px 16px;
-            border-radius: 24px;
-            color: white;
-            display: inline-block;
-            font-weight: 500;
-        }
-
-        .profile-image {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border: 3px solid white;
         }
 
         #imageModal {
             background-color: rgba(0, 0, 0, 0.9);
+            display: none;
         }
 
         .modal-content {
@@ -1393,40 +1357,51 @@ def profile_page():
             border-radius: 8px;
         }
 
-        @media (max-width: 768px) {
-            .image-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
+        .loading-spinner {
+            border: 4px solid var(--surface-variant);
+            border-top: 4px solid var(--primary-green);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
         }
 
-        @media (max-width: 480px) {
-            .image-grid {
-                grid-template-columns: repeat(2, 1fr);
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
             }
         }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <div class="profile-section p-6">
+    <div class="main-container px-4">
+        <div class="profile-card p-6 mb-6">
             <div class="flex items-center space-x-6">
                 <div class="flex-shrink-0">
                     <img id="profileImage" 
-                         class="profile-image"
+                         class="w-24 h-24 rounded-full object-cover shadow-md border-2 border-white"
                          src=""
-                         alt="Profile"
+                         alt="Immagine profilo"
                          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM6 12a6 6 0 1 1 12 0v1H6v-1z%22/></svg>'">
                 </div>
                 <div>
-                    <h1 id="userName" class="text-2xl font-bold mb-3"></h1>
-                    <div class="points-badge">
-                        <span id="points">0 points</span>
+                    <h1 id="userName" class="text-2xl font-bold mb-2">Utente</h1>
+                    <div class="points-badge bg-green-600 text-white py-2 px-4 rounded-full font-semibold">
+                        <span id="points">0 punti</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="imageGrid" class="image-grid"></div>
+        <div id="loadingSpinner" class="text-center hidden">
+            <div class="loading-spinner mx-auto"></div>
+            <p class="mt-3 text-gray-500">Caricamento...</p>
+        </div>
+
+        <div id="imageGrid" class="image-grid grid grid-cols-4 gap-4"></div>
 
         <div id="emptyState" class="hidden text-center mt-20">
             <svg class="w-20 h-20 mx-auto mb-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1437,17 +1412,14 @@ def profile_page():
         </div>
     </div>
 
-    <div id="imageModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
-        <img id="modalImage" class="modal-content" src="" alt="Enlarged image">
+    <div id="imageModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" aria-hidden="true">
+        <img id="modalImage" class="modal-content" src="" alt="Immagine ingrandita">
     </div>
 
     <script>
         async function fetchProfileWithImages(email) {
             try {
-                const response = await fetch(`/profileInformation?email=${encodeURIComponent(email)}`, {
-                    method: 'GET'
-                });
-
+                const response = await fetch(`/profileInformation?email=${encodeURIComponent(email)}`, { method: 'GET' });
                 if (!response.ok) throw new Error('Failed to load profile');
                 return await response.json();
             } catch (error) {
@@ -1459,15 +1431,14 @@ def profile_page():
         function createImageElement(imageUrl) {
             const div = document.createElement('div');
             div.className = 'grid-item';
-            
             const img = document.createElement('img');
             img.src = imageUrl;
-            img.alt = 'Grid Image';
+            img.alt = 'Foto';
             img.onclick = () => {
-                document.getElementById('imageModal').classList.remove('hidden');
+                const modal = document.getElementById('imageModal');
+                modal.style.display = 'flex';
                 document.getElementById('modalImage').src = imageUrl;
             };
-
             div.appendChild(img);
             return div;
         }
@@ -1475,20 +1446,21 @@ def profile_page():
         async function initialize() {
             const urlParams = new URLSearchParams(window.location.search);
             const email = urlParams.get('email');
-
             if (!email) {
                 console.error('Email mancante');
                 return;
             }
 
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            loadingSpinner.classList.remove('hidden');
+
             try {
                 const data = await fetchProfileWithImages(email);
-                
-                document.getElementById('userName').textContent = data.userName || 'Unknown User';
-                document.getElementById('points').textContent = `${data.point || 0} points`;
-                if (data.profileImageUrl) {
-                    document.getElementById('profileImage').src = data.profileImageUrl;
-                }
+                document.getElementById('userName').textContent = data.userName || 'Utente sconosciuto';
+                document.getElementById('points').textContent = `${data.point || 0} punti`;
+
+                const profileImage = document.getElementById('profileImage');
+                if (data.profileImageUrl) profileImage.src = data.profileImageUrl;
 
                 const imageGrid = document.getElementById('imageGrid');
                 if (data.images && data.images.length > 0) {
@@ -1500,6 +1472,8 @@ def profile_page():
                 }
             } catch (error) {
                 console.error('Error initializing:', error);
+            } finally {
+                loadingSpinner.classList.add('hidden');
             }
         }
 
