@@ -1424,10 +1424,27 @@ def profile_page():
         </div>
     </div>
 
-    <!-- Modale immagine -->
-    <div id="imageModal" class="fixed inset-0 flex items-center justify-center z-50">
-        <img id="modalImage" src="" alt="Immagine ingrandita">
+        <!-- Modale immagine -->
+    <div id="imageModal" class="fixed inset-0 flex items-center justify-center z-50 hidden bg-black bg-opacity-90" onclick="toggleModal()">
+        <img id="modalImage" src="" alt="Immagine ingrandita" class="max-h-[80vh] max-w-[80vw] rounded transition-transform duration-300" onclick="event.stopPropagation();">
     </div>
+
+    <script>
+        function toggleModal(imageUrl = null) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            
+            if (modal.classList.contains('hidden')) {
+                // Mostra la modale
+                modal.classList.remove('hidden');
+                modalImage.src = imageUrl;
+            } else {
+                // Nasconde la modale
+                modal.classList.add('hidden');
+                modalImage.src = ''; // Ripristina il contenuto
+            }
+        }
+    </script>
 
     <script>
         async function fetchProfileWithImages(email) {
