@@ -492,7 +492,7 @@ def profile_with_images():
 @firebase_required
 def get_profile():
 
-    email = request.user.get("email")
+    email = request.args.get("email")
 
     if not email:
         return jsonify({"error": "Email not provided"}), 400
@@ -780,7 +780,7 @@ def addEvent():
         new_subscription = EventSubscibe(
             emailUser=email,
             eventCode=code,
-            position="false" 
+            position="true" 
         )
 
         db.session.add(new_subscription)
