@@ -531,46 +531,7 @@ def get_profile():
         "point":user.point
     }), 200
 
-@app.route('/profileS', methods=['POST'])
-@firebase_required
-def get_profile():
 
-    email = request.json.get('email')
-
-    if not email:
-        return jsonify({"error": "Email not provided"}), 400
-
-    user = UserAccount.query.filter_by(emailUser=email).first()
-    if user is None:
-        return jsonify({"error": "User not found"}), 404
-    
-
-    return jsonify({
-        "userName": user.userName,
-        "profileImageUrl": user.profileImageUrl,
-        "point":user.point
-    }), 200
-
-@app.route('/getImageS', methods=['POST'])
-@firebase_required
-def get_Image():
-   
-    email = request.json.get('email')
-
-   
-    if not email:
-        return jsonify({"error": "Email not provided"}), 400
-
-    
-    images = []
-    blobs = bucket.list_blobs(prefix=f'images/{email}/')  
-
-   
-    for blob in blobs:
-        blob.make_public() 
-        images.append(blob.public_url)
-    
-    return jsonify({"images": images}), 200
 
 @app.route('/createEvent', methods=['POST'])
 @firebase_required
