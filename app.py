@@ -492,7 +492,7 @@ def profile_with_images():
 @firebase_required
 def get_profile():
 
-    email = request.args.get("email")
+    email = request.form['email']
 
     if not email:
         return jsonify({"error": "Email not provided"}), 400
