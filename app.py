@@ -968,7 +968,7 @@ def photoProfilesByEvent():
 
         emails = [event.emailUser for event in events]
 
-        profiles = [UserAccount.query.filter_by(emailUser=email).first() for email in emails]
+        profiles = [UserAccount.query.filter_by(emailUser=email).all() for email in emails]
 
         profiles = [profile for profile in profiles if profile]
 
