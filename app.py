@@ -954,45 +954,37 @@ def NameByCode():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-@app.route('/get_user_profiles', methods=['POST'])
+@app.route('/get_user_profiles', methods=['POST'])  # Query che ritorna le foto profilo di un evento
 @firebase_required
-def get_event_profile_photos():  # Renamed for clarity
+def photoProfilesByEvent():
     try:
         data = request.json
-        event_code = data.get('code')
+        code = data.get('code')
 
-        if not event_code:
-            return jsonify({"error": "Codice evento non fornito"}), 400
+        if not code:
+            return jsonify({"error": "Event code not provided"}), 400
         
-        # Use a JOIN to get profiles in a single query instead of multiple queries
-        profiles = (UserAccount.query
-                   .join(EventSubscibe, UserAccount.emailUser == EventSubscibe.emailUser)
-                   .filter(EventSubscibe.eventCode == event_code)
-                   .all())
+        events = EventSubscibe.query.filter_by(eventCode=code).all()
 
-        if not profiles:
-            return jsonify({"message": "Nessuna immagine trovata per questo codice evento"}), 404
+        emails = [event.emailUser for event in events]
 
-        # Transform the results in a single list comprehension
-        image_profiles = [
-            {"image_path": profile.profileImageUrl}
-            for profile in profiles
-            if profile.profileImageUrl  # Only include profiles with images
-        ]
+        profiles = [UserAccount.query.filter_by(emailUser=email).all() for email in emails]
+
+        profiles = [profile for profile in profiles if profile]
+
+        image_profiles = [{"image_path": profile.profileImageUrl} for profile in profiles]
 
         if not image_profiles:
-            return jsonify({"message": "Nessun utente ha un'immagine del profilo per questo evento"}), 404
+            return jsonify({"message": "No images found for this event code."}), 404
 
         return jsonify(image_profiles), 200
 
     except Exception as e:
-        # Log the error for debugging
-        app.logger.error(f"Error in get_event_profile_photos: {str(e)}")
-        return jsonify({"error": "Si è verificato un errore interno"}), 500
+        return jsonify({"error": str(e)}), 500
 
 
 
-@app.route('/photoByCode', methods=['POST'])  # Query che ritorna le foto di un evento per un determinato codice
+@app.route('/photoByCode', methods=['POST'])
 @firebase_required
 def photoByCode():
     try:
@@ -1003,18 +995,27 @@ def photoByCode():
         if not code:
             return jsonify({"error": "Event code not provided"}), 400
         
-        images = FileRecord.query.filter_by(code=code).all()
+        # Join FileRecord with UserAccount to get profile images
+        images = (db.session.query(FileRecord, UserAccount.profileImageUrl)
+                 .join(UserAccount, FileRecord.userName == UserAccount.userName)
+                 .filter(FileRecord.code == code)
+                 .all())
 
-        image_links = [{"image_path": img.file_url, "likes": int(img.point),"name": img.userName} for img in images]
+        image_links = [{
+            "image_path": img[0].file_url,
+            "likes": int(img[0].point),
+            "name": img[0].userName,
+            "image_profile": img[1]  # profileImageUrl from UserAccount
+        } for img in images]
 
         if not image_links:
             return jsonify({"message": "No images found for this event code."}), 404
         
-        
         return jsonify(image_links), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        app.logger.error(f"Error in photoByCode: {str(e)}")
+        return jsonify({"error": str(e)}), 500
     
 
     
