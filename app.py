@@ -26,6 +26,7 @@ from firebase_admin import credentials, auth
 import os
 from dotenv import load_dotenv
 import urllib.parse
+from geopy.distance import geodesic
 
 
 #psql -U postgres
@@ -833,6 +834,7 @@ def addEvent():
     except Exception as e:
         db.session.rollback()  
         return jsonify({'message': 'Internal server error'}), 500
+
     
 
 @app.route('/uploadEventImage', methods=['POST'])#query per caricare una foto per un evento
@@ -842,12 +844,36 @@ def uploadEventImage():
         email = request.user.get("email")
         code = request.form['eventCode']
         file = request.files.get('image')
+        latitudine=request.files.get('latitudine')
+        longitudine=request.files.get('longitudine')
+
+        latitudine = float(latitudine)
+        longitudine = float(longitudine)
 
         user = UserAccount.query.filter_by(emailUser=email).first()
         username = user.userName
         
         if not email:
             return jsonify({"error": "Email not provided"}), 400
+
+       
+        event = Event.query.filter_by(eventCode=code).first()
+        
+        if not event:
+            return jsonify({"error": "Event not found"}), 404
+        
+        
+        latitudineE=event.latitudine
+        longitudineE=event.longitude
+
+        latitudineE = float(event.latitudine)
+        longitudineE = float(event.longitude)
+
+        distanza = geodesic((latitudine, longitudine), (latitudineE, longitudineE)).meters
+
+        if(distanza>1000):
+            return jsonify({"error": "Sei troppo lontano dall'evento"}), 404
+        
         
         if file:
             
@@ -1054,29 +1080,6 @@ def get_ranking():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
-
-@app.route('/get_coordinate', methods=['POST'])
-@firebase_required
-def get_coordinate():
-    try:
-        data = request.get_json()
-    
-        code = data.get('code')
-       
-        event = Event.query.filter_by(eventCode=code).first()
-        
-       
-        if not event:
-            return jsonify({"error": "Event not found"}), 404
-        
-        
-        return jsonify({
-            "latitude": event.latitudine,
-            "longitude": event.longitude
-        }), 200
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
     
 
 @app.route('/set_position_true', methods=['POST'])
