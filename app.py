@@ -995,7 +995,7 @@ def photoByCode():
         if not code:
             return jsonify({"error": "Event code not provided"}), 400
         
-        images = FileRecord.query.filter_by(code=code, emailUser=email).all()
+        images = FileRecord.query.filter_by(code=code).all()
 
         image_links = [{"image_path": img.file_url, "likes": int(img.point),"name": img.userName} for img in images]
 
