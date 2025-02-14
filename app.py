@@ -769,48 +769,49 @@ def get_event_datesAdd():
 @app.route('/events_by_date', methods=['POST'])
 @firebase_required
 def get_events_by_date():
-
-  
     data = request.json
     email = request.user.get("email")
     event_date_str = data.get('date')
 
+    if not event_date_str:
+        return jsonify({'message': 'Data richiesta mancante'}), 400
 
     try:
-
+        # Parse and validate date format
+        event_date = datetime.strptime(event_date_str, '%Y-%m-%d').date()
         
+        # Get all event codes user has access to
         subscribed_events = EventSubscibe.query.filter_by(emailUser=email).all()
-        create_events=Event.query.filter_by(emailUser=email, create="yes").all()
-        event_codes = [sub.eventCode for sub in subscribed_events] + [evn.eventCode for evn in create_events]
+        created_events = Event.query.filter_by(emailUser=email, create="yes").all()
+        event_codes = [sub.eventCode for sub in subscribed_events] + [evn.eventCode for evn in created_events]
 
-
-       
-        events = Event.query.filter(Event.eventCode.in_(event_codes),and_(Event.eventDate == event_date_str,Event.emailUser==email)).all()
+        # Get events for the specified date that user has access to
+        events = Event.query.filter(
+            Event.eventCode.in_(event_codes),
+            Event.eventDate == event_date
+        ).all()
 
         if not events:
             return jsonify({'message': 'Nessun evento trovato per questa data'}), 404
 
-       
-        events_list = []
-        for event in events:
-            events_list.append({
-                'id': event.id,
-                'eventName': event.eventName,
-                'emailUser': event.emailUser,
-                'eventCode': event.eventCode,
-                'eventDate': event.eventDate.strftime('%Y-%m-%d'),
-                'endDate': event.endDate.strftime('%Y-%m-%d'),
-                'endTime': event.endTime.strftime('%H:%M:%S'),
-                'longitude': event.longitude,
-                'latitudine': event.latitudine
-            })
+        events_list = [{
+            'id': event.id,
+            'eventName': event.eventName,
+            'emailUser': event.emailUser,
+            'eventCode': event.eventCode,
+            'eventDate': event.eventDate.strftime('%Y-%m-%d'),
+            'endDate': event.endDate.strftime('%Y-%m-%d'),
+            'endTime': event.endTime.strftime('%H:%M:%S'),
+            'longitude': event.longitude,
+            'latitudine': event.latitudine
+        } for event in events]
 
-      
         return jsonify({'events': events_list}), 200
 
-    except ValueError:
-       
+    except ValueError as e:
         return jsonify({'message': 'Formato della data non valido. Usa YYYY-MM-DD.'}), 400
+    except Exception as e:
+        return jsonify({'message': f'Errore del server: {str(e)}'}), 500
     
 
 @app.route('/addEvent', methods=['POST'])
