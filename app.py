@@ -877,9 +877,7 @@ def uploadEventImage():
         
         if file:
 
-            existing_file = FileRecord.query.filter_by(eventCode=code, filename=file.filename).first()
-            if existing_file:
-                return jsonify({"error": "File already uploaded for this event"}), 400
+           
             
             bucket = storage.bucket()
             blob = bucket.blob(f'images/{email}/{file.filename}')
