@@ -397,17 +397,19 @@ def upload_image():
         username = user.userName
 
         if file:
-            # Carica il file su Firebase
+
+            existing_file = FileRecord.query.filter_by(filename=file.filename).first()
+            if existing_file:
+                return jsonify({"error": "File already uploaded for this event"}), 400
+
             bucket = storage.bucket()
             blob = bucket.blob(f'images/{email}/{file.filename}')
             blob.upload_from_file(file)
 
             blob.make_public() 
 
-            # Ottieni l'URL dell'immagine
             file_url = blob.public_url
 
-            # Salva i metadati nel database
             new_file = FileRecord(userName=username,emailUser=email, filename=file.filename, file_url=file_url, code='null',  point="0")
             db.session.add(new_file)
             db.session.commit()
@@ -874,6 +876,10 @@ def uploadEventImage():
         
         
         if file:
+
+            existing_file = FileRecord.query.filter_by(eventCode=code, filename=file.filename).first()
+            if existing_file:
+                return jsonify({"error": "File already uploaded for this event"}), 400
             
             bucket = storage.bucket()
             blob = bucket.blob(f'images/{email}/{file.filename}')
