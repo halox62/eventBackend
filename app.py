@@ -844,8 +844,8 @@ def uploadEventImage():
         email = request.user.get("email")
         code = request.form['eventCode']
         file = request.files.get('image')
-        latitudine=request.files.get('latitudine')
-        longitudine=request.files.get('longitudine')
+        latitudine = request.form.get('latitudine') 
+        longitudine = request.form.get('longitudine')  
 
         latitudine = float(latitudine)
         longitudine = float(longitudine)
@@ -872,7 +872,7 @@ def uploadEventImage():
         distanza = geodesic((latitudine, longitudine), (latitudineE, longitudineE)).meters
 
         if(distanza>1000):
-            return jsonify({"error": "Sei troppo lontano dall'evento"}), 408
+            return jsonify({"error": "Sei troppo lontano dall'evento"}), 403
         
         
         if file:
@@ -894,7 +894,7 @@ def uploadEventImage():
             return jsonify({'file_url': file_url}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": str(e)}), 500
     
 
 @app.route('/nameByCode', methods=['POST'])  # Query che ritorna il nome di un evento per un determinato codice
