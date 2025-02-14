@@ -646,6 +646,28 @@ def getCreateEvent():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+@app.route('/get_coordinate', methods=['POST'])
+@firebase_required
+def get_coordinate():
+    try:
+        data = request.get_json()
+    
+        code = data.get('code')
+       
+        event = Event.query.filter_by(eventCode=code).first()
+        
+       
+        if not event:
+            return jsonify({"error": "Event not found"}), 404
+        
+        
+        return jsonify({
+            "latitude": event.latitudine,
+            "longitude": event.longitude
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
 
 
