@@ -954,33 +954,41 @@ def NameByCode():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-@app.route('/get_user_profiles', methods=['POST'])  # Query che ritorna le foto profilo di un evento
+@app.route('/get_user_profiles', methods=['POST'])
 @firebase_required
-def photoProfilesByEvent():
+def get_event_profile_photos():  # Renamed for clarity
     try:
         data = request.json
-        code = data.get('code')
+        event_code = data.get('code')
 
-        if not code:
-            return jsonify({"error": "Event code not provided"}), 400
+        if not event_code:
+            return jsonify({"error": "Codice evento non fornito"}), 400
         
-        events = EventSubscibe.query.filter_by(eventCode=code).all()
+        # Use a JOIN to get profiles in a single query instead of multiple queries
+        profiles = (UserAccount.query
+                   .join(EventSubscibe, UserAccount.emailUser == EventSubscibe.emailUser)
+                   .filter(EventSubscibe.eventCode == event_code)
+                   .all())
 
-        emails = [event.emailUser for event in events]
+        if not profiles:
+            return jsonify({"message": "Nessuna immagine trovata per questo codice evento"}), 404
 
-        profiles = [UserAccount.query.filter_by(emailUser=email).all() for email in emails]
-
-        profiles = [profile for profile in profiles if profile]
-
-        image_profiles = [{"image_path": profile.profileImageUrl} for profile in profiles]
+        # Transform the results in a single list comprehension
+        image_profiles = [
+            {"image_path": profile.profileImageUrl}
+            for profile in profiles
+            if profile.profileImageUrl  # Only include profiles with images
+        ]
 
         if not image_profiles:
-            return jsonify({"message": "No images found for this event code."}), 404
+            return jsonify({"message": "Nessun utente ha un'immagine del profilo per questo evento"}), 404
 
         return jsonify(image_profiles), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        # Log the error for debugging
+        app.logger.error(f"Error in get_event_profile_photos: {str(e)}")
+        return jsonify({"error": "Si è verificato un errore interno"}), 500
 
 
 
