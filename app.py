@@ -872,7 +872,7 @@ def uploadEventImage():
         distanza = geodesic((latitudine, longitudine), (latitudineE, longitudineE)).meters
 
         if(distanza>1000):
-            return jsonify({"error": "Sei troppo lontano dall'evento"}), 404
+            return jsonify({"error": "Sei troppo lontano dall'evento"}), 408
         
         
         if file:
