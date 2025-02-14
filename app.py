@@ -453,11 +453,9 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        access_token = create_access_token(identity={'email': email})
-
-        return jsonify({"access_token":access_token}), 200
+        return jsonify({"register":"ok"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": str(e)}), 500
     
 
 @app.route('/profileInformation', methods=['GET'])
