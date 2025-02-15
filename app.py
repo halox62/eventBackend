@@ -941,8 +941,10 @@ def NameByCode():
         if event:
             name = event.eventName
 
+        endTime=event.endTime
 
-        name_res = {"name": name} 
+
+        name_res = {"name": name, "EndTime":endTime} 
 
 
         if not name_res:
