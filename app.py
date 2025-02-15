@@ -1065,9 +1065,8 @@ def photoByCode():
 
         if not code:
             return jsonify({"error": "Event code not provided"}), 400
-        
-        # Unisci FileRecord con UserAccount per ottenere immagine profilo ed email
-        images = (db.session.query(FileRecord, UserAccount.profileImageUrl, UserAccount.email)
+    
+        images = (db.session.query(FileRecord, UserAccount.profileImageUrl, UserAccount.emailUser)
                  .join(UserAccount, FileRecord.userName == UserAccount.userName)
                  .filter(FileRecord.code == code)
                  .all())
