@@ -860,68 +860,81 @@ def addEvent():
 
     
 
-@app.route('/uploadEventImage', methods=['POST'])#query per caricare una foto per un evento
+@app.route('/uploadEventImage', methods=['POST'])
 @firebase_required
 def uploadEventImage():
     try:
         email = request.user.get("email")
-        code = request.form['eventCode']
-        file = request.files.get('image')
-        latitudine = request.form.get('latitudine') 
-        longitudine = request.form.get('longitudine')  
+        if not email:
+            return jsonify({"error": "Autenticazione richiesta"}), 401
 
-        latitudine = float(latitudine)
-        longitudine = float(longitudine)
+        required_fields = ['eventCode', 'latitudine', 'longitudine']
+        if not all(field in request.form for field in required_fields):
+            return jsonify({"error": "Parametri mancanti"}), 400
+            
+        if 'image' not in request.files:
+            return jsonify({"error": "Nessun file caricato"}), 400
+
+        code = request.form['eventCode']
+        file = request.files['image']
+        
+        try:
+            latitudine = float(request.form['latitudine'])
+            longitudine = float(request.form['longitudine'])
+        except ValueError:
+            return jsonify({"error": "Coordinate non valide"}), 400
 
         user = UserAccount.query.filter_by(emailUser=email).first()
-        username = user.userName
+        if not user:
+            return jsonify({"error": "Utente non trovato"}), 404
         
-        if not email:
-            return jsonify({"error": "Email not provided"}), 400
-
-       
         event = Event.query.filter_by(eventCode=code).first()
-        
         if not event:
-            return jsonify({"error": "Event not found"}), 404
+            return jsonify({"error": "Evento non trovato"}), 404
+
+        event_location = (float(event.latitudine), float(event.longitude))
+        user_location = (latitudine, longitudine)
+        distance = geodesic(user_location, event_location).meters
         
+        if distance > 1000: 
+            return jsonify({
+                "error": "Sei troppo lontano dall'evento",
+                "distance": round(distance)
+            }), 403
+
+        if FileRecord.query.filter_by(code=code, filename=file.filename).first():
+            return jsonify({"error": "File già caricato per questo evento"}), 400
+
+        filename = secure_filename(file.filename)
         
-        latitudineE=event.latitudine
-        longitudineE=event.longitude
-
-        latitudineE = float(event.latitudine)
-        longitudineE = float(event.longitude)
-
-        distanza = geodesic((latitudine, longitudine), (latitudineE, longitudineE)).meters
-
-        if(distanza>1000):
-            return jsonify({"error": "Sei troppo lontano dall'evento"}), 403
+        bucket = storage.bucket()
+        blob_path = f'images/{email}/{filename}'
+        blob = bucket.blob(blob_path)
         
+        content_type = file.content_type
+        blob.upload_from_file(file, content_type=content_type)
+        blob.make_public()
+
+        new_file = FileRecord(
+            userName=user.userName,
+            emailUser=email,
+            filename=filename,
+            file_url=blob.public_url,
+            code=code,
+            point="0"
+        )
         
-        if file:
+        db.session.add(new_file)
+        db.session.commit()
 
-            existing_file = FileRecord.query.filter_by(code=code, filename=file.filename).first()
-            if existing_file:
-                return jsonify({"error": "File already uploaded for this event"}), 400
-            
-            bucket = storage.bucket()
-            blob = bucket.blob(f'images/{email}/{file.filename}')
-            blob.upload_from_file(file)
-
-            blob.make_public() 
-
-           
-            file_url = blob.public_url
-
-           
-            new_file = FileRecord(userName=username, emailUser=email, filename=file.filename, file_url=file_url, code=code, point="0")
-            db.session.add(new_file)
-            db.session.commit()
-
-            return jsonify({'file_url': file_url}), 200
+        return jsonify({
+            'message': 'File caricato con successo',
+            'file_url': blob.public_url
+        }), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logging.error(f"Error in uploadEventImage: {str(e)}")
+        return jsonify({"error": "Errore del server"}), 500
     
 
 @app.route('/nameByCode', methods=['POST'])  # Query che ritorna il nome di un evento per un determinato codice
