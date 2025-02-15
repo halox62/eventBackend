@@ -27,6 +27,8 @@ import os
 from dotenv import load_dotenv
 import urllib.parse
 from geopy.distance import geodesic
+import logging
+from werkzeug.utils import secure_filename
 
 
 #psql -U postgres
