@@ -941,7 +941,7 @@ def NameByCode():
         if event:
             name = event.eventName
 
-        endTime=event.endTime
+        endTime=event.endTime.strftime('%H:%M:%S')
 
 
         name_res = {"name": name, "EndTime":endTime} 
@@ -954,7 +954,7 @@ def NameByCode():
         return jsonify(name_res), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/get_user_profiles', methods=['POST'])  # Query che ritorna le foto profilo di un evento
 @firebase_required
