@@ -29,6 +29,16 @@ import urllib.parse
 from geopy.distance import geodesic
 import logging
 from werkzeug.utils import secure_filename
+import mimetypes
+
+
+# Endpoint per caricare l'immagine
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 
 #psql -U postgres
@@ -387,40 +397,84 @@ scheduler.start()
 def healthcheck():
     return 'OK', 200
 
-# Endpoint per caricare l'immagine
+
 @app.route('/upload', methods=['POST'])
 @firebase_required
 def upload_image():
     try:
-        file = request.files.get('file') 
+        # Verifica autenticazione
         email = request.user.get("email")
+        if not email:
+            return jsonify({"error": "Autenticazione richiesta"}), 401
 
+        # Verifica presenza file
+        if 'file' not in request.files:
+            return jsonify({"error": "Nessun file caricato"}), 400
+        
+        file = request.files['file']
+        
+        # Verifica nome file
+        if file.filename == '':
+            return jsonify({"error": "Nome file non valido"}), 400
+
+        # Verifica dimensione file
+        if request.content_length > MAX_FILE_SIZE:
+            return jsonify({"error": f"File troppo grande. Dimensione massima: {MAX_FILE_SIZE/1024/1024}MB"}), 400
+
+        # Verifica tipo file
+        if not allowed_file(file.filename):
+            return jsonify({"error": f"Tipo file non supportato. Formati permessi: {', '.join(ALLOWED_EXTENSIONS)}"}), 400
+
+        # Recupera informazioni utente
         user = UserAccount.query.filter_by(emailUser=email).first()
-        username = user.userName
+        if not user:
+            return jsonify({"error": "Utente non trovato"}), 404
 
-        if file:
+        # Genera nome file sicuro
+        secure_name = secure_filename(file.filename)
+        
+        # Verifica duplicati
+        existing_file = FileRecord.query.filter_by(filename=secure_name).first()
+        if existing_file:
+            return jsonify({"error": "File già caricato"}), 400
 
-            existing_file = FileRecord.query.filter_by(filename=file.filename).first()
-            if existing_file:
-                return jsonify({"error": "File already uploaded for this event"}), 400
-
+        try:
+            # Upload su Firebase Storage
             bucket = storage.bucket()
-            blob = bucket.blob(f'images/{email}/{file.filename}')
-            blob.upload_from_file(file)
+            blob_path = f'images/{email}/{secure_name}'
+            blob = bucket.blob(blob_path)
+            
+            # Imposta il content type corretto
+            content_type = file.content_type or mimetypes.guess_type(secure_name)[0]
+            blob.upload_from_file(file, content_type=content_type)
+            blob.make_public()
 
-            blob.make_public() 
-
-            file_url = blob.public_url
-
-            new_file = FileRecord(userName=username,emailUser=email, filename=file.filename, file_url=file_url, code='null',  point="0")
+            # Salva record nel database
+            new_file = FileRecord(
+                userName=user.userName,
+                emailUser=email,
+                filename=secure_name,
+                file_url=blob.public_url,
+                code='null',
+                point="0"
+            )
+            
             db.session.add(new_file)
             db.session.commit()
 
-            return jsonify({'file_url': file_url}), 200
-        else:
-            return jsonify({'error': 'No file uploaded'}), 400
+            return jsonify({
+                'message': 'File caricato con successo',
+                'file_url': blob.public_url
+            }), 200
+
+        except Exception as e:
+            logging.error(f"Errore durante l'upload: {str(e)}")
+            db.session.rollback()
+            return jsonify({"error": "Errore durante il salvataggio del file"}), 500
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logging.error(f"Errore generale in upload_image: {str(e)}")
+        return jsonify({"error": "Errore del server"}), 500
 
 
 @app.route('/login', methods=['POST'])
