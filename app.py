@@ -1066,8 +1066,8 @@ def photoByCode():
         if not code:
             return jsonify({"error": "Event code not provided"}), 400
         
-        # Join FileRecord with UserAccount to get profile images
-        images = (db.session.query(FileRecord, UserAccount.profileImageUrl)
+        # Unisci FileRecord con UserAccount per ottenere immagine profilo ed email
+        images = (db.session.query(FileRecord, UserAccount.profileImageUrl, UserAccount.email)
                  .join(UserAccount, FileRecord.userName == UserAccount.userName)
                  .filter(FileRecord.code == code)
                  .all())
@@ -1076,7 +1076,8 @@ def photoByCode():
             "image_path": img[0].file_url,
             "likes": int(img[0].point),
             "name": img[0].userName,
-            "image_profile": img[1]  # profileImageUrl from UserAccount
+            "image_profile": img[1],
+            "email": img[2]
         } for img in images]
 
         if not image_links:
