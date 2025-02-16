@@ -668,7 +668,8 @@ def createEvent():
             endTime=end_time,  
             longitude=longitude,
             latitudine=latitudine,
-            create=create
+            create=create,
+            end="false"
         )
 
        
