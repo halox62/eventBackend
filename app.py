@@ -133,6 +133,7 @@ def update_event_rankings():
         ).all()
         for event in events:
             print(f"Processing event: {event.eventCode}")
+            event.end="true"
             
             photos = FileRecord.query.filter_by(code=event.eventCode).all()
             sorted_photos = sorted(photos, key=lambda x: x.likes, reverse=True)
@@ -747,13 +748,15 @@ def getEventCode():
 
         ongoing_events = Event.query.filter(
             Event.eventCode.in_(subscribed_event_codes),
-            or_(
-                # Caso 1: la data di fine è successiva o uguale a oggi
-                Event.endDate > datetime.now().date(),
-                # Caso 2: la data di fine è oggi e l'orario di fine è futuro o presente
-                and_(
-                    Event.endDate == datetime.now().date(),
-                    Event.endTime >= datetime.now().time()
+            and_(Event.end=="false",
+                or_(
+                    # Caso 1: la data di fine è successiva o uguale a oggi
+                    Event.endDate > datetime.now().date(),
+                    # Caso 2: la data di fine è oggi e l'orario di fine è futuro o presente
+                    and_(
+                        Event.endDate == datetime.now().date(),
+                        Event.endTime >= datetime.now().time()
+                    )
                 )
             )
         ).all()
@@ -947,18 +950,17 @@ def uploadEventImage():
         if not event:
             return jsonify({"error": "Evento non trovato"}), 404
         
+        if(event.end=="true"):
+            return jsonify({"error": "Evento finito"}), 404
+        
         
         
         current_date = datetime.now().date()
         current_time = datetime.now().time()
-
-        if (event.endDate < current_date or 
-            (event.endDate == current_date and event.endTime < current_time)):
-            return jsonify({"error": "Evento terminato"}), 404
     
-        if (event.startDate > current_date or 
-            (event.startDate == current_date and event.startTime > current_time)):
-            return jsonify({"error": "Evento non ancora iniziato"}), 404    
+        if (event.endDate < current_date or 
+            (event.endDate == current_date and event.startTime > current_time)):
+            return jsonify({"error": "Evento non ancora iniziato"}), 404   
             
 
 
