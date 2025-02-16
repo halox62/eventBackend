@@ -797,28 +797,45 @@ def get_event_dates():
         return jsonify({"error": str(e)}), 400
     
 
-@app.route('/subscribeGetEventDates', methods=['GET'])#ritorna le date degli eventi dove partecipa un'email
+@app.route('/subscribeGetEventDates', methods=['GET'])
 @firebase_required
 def get_event_datesAdd():
     try:
         email = request.user.get("email")
-
-
         if not email:
             return jsonify({"error": "Email not provided"}), 400
 
-
+      
         subscribed_events = EventSubscibe.query.filter_by(emailUser=email).all()
+        if not subscribed_events:
+            return jsonify([]), 200  
+
 
         event_codes = [event.eventCode for event in subscribed_events]
 
+
         events = Event.query.filter(Event.eventCode.in_(event_codes)).all()
 
-        event_dates = [event.eventDate.strftime('%Y-%m-%d') for event in events]
+        current_date = datetime.now().date()
+        current_time = datetime.now().time()
 
-        return jsonify(event_dates), 200  
+        active_event_dates = []
+        for event in events:
+            if (event.endDate < current_date or 
+                (event.endDate == current_date and event.endTime < current_time)):
+                continue
+                
+            if (event.startDate > current_date or 
+                (event.startDate == current_date and event.startTime > current_time)):
+                continue
+                
+            active_event_dates.append(event.eventDate.strftime('%Y-%m-%d'))
+
+        return jsonify(active_event_dates), 200
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        logging.error(f"Error in get_event_datesAdd: {str(e)}")
+        return jsonify({"error": str(e)}), 500 
     
 
 
@@ -950,8 +967,16 @@ def uploadEventImage():
         
         
         
-        if event.endDate > datetime.now().date() | event.endTime < datetime.now().time() | (event.endDate <= datetime.now().date() & event.endTime < datetime.now().time()):
-            return jsonify({"error": "Evento finito o no ancora iniziato"}), 404
+        current_date = datetime.now().date()
+        current_time = datetime.now().time()
+
+        if (event.endDate < current_date or 
+            (event.endDate == current_date and event.endTime < current_time)):
+            return jsonify({"error": "Evento terminato"}), 404
+    
+        if (event.startDate > current_date or 
+            (event.startDate == current_date and event.startTime > current_time)):
+            return jsonify({"error": "Evento non ancora iniziato"}), 404    
             
 
 
