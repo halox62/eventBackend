@@ -947,6 +947,13 @@ def uploadEventImage():
         event = Event.query.filter_by(eventCode=code).first()
         if not event:
             return jsonify({"error": "Evento non trovato"}), 404
+        
+        
+        
+        if event.endDate > datetime.now().date() & event.endTime < datetime.now().time():
+            return jsonify({"error": "Evento finito o no ancora iniziato"}), 404
+            
+
 
         event_location = (float(event.latitudine), float(event.longitude))
         user_location = (latitudine, longitudine)
