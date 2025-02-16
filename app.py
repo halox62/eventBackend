@@ -218,6 +218,7 @@ class Event(db.Model):
     latitudine = db.Column(db.String(255), nullable=False) 
     longitude = db.Column(db.String(255), nullable=False) 
     create = db.Column(db.String(80), nullable=False) 
+    end = db.Column(db.String(80), nullable=False) 
 
 class EventSubscibe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -737,16 +738,12 @@ def getEventCode():
         if not email:
             return jsonify({"error": "Email not provided"}), 400
         
-
-
-       
         subscribed_events = EventSubscibe.query.filter_by(emailUser=email).all()
         subscribed_event_codes = [sub.eventCode for sub in subscribed_events]
 
         if not subscribed_event_codes:
             return jsonify({"message": "No subscribed events found for this email"}), 404
 
-      
         ongoing_events = Event.query.filter(
             Event.eventCode.in_(subscribed_event_codes),
             or_(
@@ -797,45 +794,29 @@ def get_event_dates():
         return jsonify({"error": str(e)}), 400
     
 
-@app.route('/subscribeGetEventDates', methods=['GET'])
+@app.route('/subscribeGetEventDates', methods=['GET'])#ritorna le date degli eventi dove partecipa un'email
 @firebase_required
 def get_event_datesAdd():
     try:
         email = request.user.get("email")
+
+
         if not email:
             return jsonify({"error": "Email not provided"}), 400
 
-      
-        subscribed_events = EventSubscibe.query.filter_by(emailUser=email).all()
-        if not subscribed_events:
-            return jsonify([]), 200  
 
+        subscribed_events = EventSubscibe.query.filter_by(emailUser=email).all()
 
         event_codes = [event.eventCode for event in subscribed_events]
 
-
         events = Event.query.filter(Event.eventCode.in_(event_codes)).all()
 
-        current_date = datetime.now().date()
-        current_time = datetime.now().time()
 
-        active_event_dates = []
-        for event in events:
-            if (event.endDate < current_date or 
-                (event.endDate == current_date and event.endTime < current_time)):
-                continue
-                
-            if (event.startDate > current_date or 
-                (event.startDate == current_date and event.startTime > current_time)):
-                continue
-                
-            active_event_dates.append(event.eventDate.strftime('%Y-%m-%d'))
+        event_dates = [event.eventDate.strftime('%Y-%m-%d') for event in events]
 
-        return jsonify(active_event_dates), 200
-
+        return jsonify(event_dates), 200  
     except Exception as e:
-        logging.error(f"Error in get_event_datesAdd: {str(e)}")
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"error": str(e)}), 400
     
 
 
