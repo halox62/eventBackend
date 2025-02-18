@@ -753,10 +753,10 @@ def getEventCode():
             Event.eventCode.in_(subscribed_event_codes),
             Event.end == "false",
             or_(
-                current_date > Event.startDate,  # Eventi dei giorni precedenti
+                current_date > Event.endDate,  # Eventi dei giorni precedenti
                 and_(
-                    current_date == Event.startDate,  # Eventi di oggi
-                    current_time >= Event.startTime    # che sono già iniziati
+                    current_date == Event.endDate,  # Eventi di oggi
+                    current_time >= Event.endTime    # che sono già iniziati
                 )
             )
         ).all()
