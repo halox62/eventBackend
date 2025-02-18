@@ -729,8 +729,6 @@ def get_coordinate():
         return jsonify({"error": str(e)}), 500
     
 
-
-
 @app.route('/getEventCode', methods=['GET'])
 @firebase_required
 def getEventCode():
@@ -746,22 +744,13 @@ def getEventCode():
         if not subscribed_event_codes:
             return jsonify({"message": "No subscribed events found for this email"}), 404
 
-        ongoing_events = Event.query.filter(
+        ongoing_events = Event.query.filter(# controllare
             Event.eventCode.in_(subscribed_event_codes),
             and_(Event.end=="false",
-                or_(
-                    # Caso 1: la data di fine è successiva o uguale a oggi
-                    Event.endDate > datetime.now().date(),
-                    # Caso 2: la data di fine è oggi e l'orario di fine è futuro o presente
-                    and_(
-                        Event.endDate == datetime.now().date(),
-                        Event.endTime >= datetime.now().time()
-                    )
-                )
+                Event.endDate == datetime.now().date(),
+                Event.endTime >= datetime.now().time()   
             )
         ).all()
-
-        # Se non ci sono eventi attivi
         if not ongoing_events:
             return jsonify({"event_codes": "null"}), 400
 
