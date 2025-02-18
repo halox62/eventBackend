@@ -738,26 +738,31 @@ def getEventCode():
         if not email:
             return jsonify({"error": "Email not provided"}), 400
         
+        # Get all subscribed events for the user
         subscribed_events = EventSubscibe.query.filter_by(emailUser=email).all()
         subscribed_event_codes = [sub.eventCode for sub in subscribed_events]
         
         if not subscribed_event_codes:
             return jsonify({"message": "No subscribed events found for this email"}), 404
         
+        # Get only events that have started and haven't ended
+        current_date = datetime.now().date()
+        current_time = datetime.now().time()
+        
         ongoing_events = Event.query.filter(
             Event.eventCode.in_(subscribed_event_codes),
             Event.end == "false",
             or_(
-                datetime.now().date() < Event.endDate,
+                current_date > Event.startDate,  # Eventi dei giorni precedenti
                 and_(
-                    Event.endDate == datetime.now().date(),
-                    Event.endTime >= datetime.now().time()
+                    current_date == Event.startDate,  # Eventi di oggi
+                    current_time >= Event.startTime    # che sono già iniziati
                 )
             )
         ).all()
         
         if not ongoing_events:
-            return jsonify({"event_codes": None}), 200 
+            return jsonify({"event_codes": None}), 200
         
         return jsonify({"event_codes": [event.eventCode for event in ongoing_events]}), 200
         
