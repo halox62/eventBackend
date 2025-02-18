@@ -750,13 +750,13 @@ def getEventCode():
         ongoing_events = Event.query.filter(
             Event.eventCode.in_(subscribed_event_codes),
             Event.end == "false",
-            #or_(
-             #   current_date > Event.endDate, 
+            or_(
+                current_date > Event.endDate, 
                 and_(
-                    current_date == Event.endDate,  # Eventi di oggi
+                    current_date == Event.eventDate,  # Eventi di oggi
                     current_time >= Event.endTime    # che sono già iniziati
                 )
-            #)
+            )
         ).all()
         
         if not ongoing_events:
