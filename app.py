@@ -773,38 +773,44 @@ def get_coordinate():
 def getEventCode():
     try:
         email = request.user.get("email")
+        client_time_str = request.args.get("clientTime")  # Leggi l'orario dal client
         
         if not email:
             return jsonify({"error": "Email not provided"}), 400
         
+        if not client_time_str:
+            return jsonify({"error": "Client time not provided"}), 400
+
+        try:
+            client_time = datetime.strptime(client_time_str, "%H:%M").time()
+        except ValueError:
+            return jsonify({"error": "Invalid time format"}), 400
+        
         subscribed_events = EventSubscibe.query.filter_by(emailUser=email).all()
         subscribed_event_codes = [sub.eventCode for sub in subscribed_events]
-        
+
         if not subscribed_event_codes:
             return jsonify({"message": "No subscribed events found for this email"}), 404
-        
-        current_date = datetime.now().date()
-        current_time = datetime.now().time()
 
-        print(current_time)
-        
+        current_date = datetime.now().date()
+
         ongoing_events = Event.query.filter(
             Event.eventCode.in_(subscribed_event_codes),
             Event.end == "false",
             or_(
                 current_date > Event.eventDate, 
                 and_(
-                    current_date == Event.eventDate,  # Eventi di oggi
-                    #current_time >= Event.endTime    # che sono già iniziati
+                    current_date == Event.eventDate,
+                    client_time >= Event.endTime  # Usa l'orario del client
                 )
             )
         ).all()
-        
+
         if not ongoing_events:
             return jsonify({"event_codes": None}), 200
-        
+
         return jsonify({"event_codes": [event.eventCode for event in ongoing_events]}), 200
-        
+
     except Exception as e:
         print(str(e))
         return jsonify({"error": str(e)}), 500
