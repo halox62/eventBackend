@@ -649,6 +649,8 @@ def createEvent():
             'create': request.form.get('create')
         }
 
+        print("Raw endTime:", request.form.get('endTime'))
+
         # Check for missing fields
         missing_fields = [field for field, value in required_fields.items() if not value]
         if missing_fields:
@@ -667,7 +669,6 @@ def createEvent():
             event_datetime = datetime.combine(event_date, event_time)
             end_datetime = datetime.combine(end_date, end_time)
             
-            # Validate date and time logic
             if event_datetime >= end_datetime:
                 return jsonify({
                     "error": "Event end time must be after start time"
@@ -681,7 +682,6 @@ def createEvent():
                     "error": "Invalid coordinates"
                 }), 400
 
-            # Check if eventCode already exists
             existing_event = Event.query.filter_by(
                 eventCode=required_fields['eventCode']
             ).first()
@@ -702,7 +702,7 @@ def createEvent():
             eventCode=required_fields['eventCode'],
             eventDate=event_date,
             endDate=end_date,
-            endTime=end_time,  # Nota: Usa solo endTime come richiesto dal modello
+            endTime=end_time,
             longitude=required_fields['longitude'],
             latitudine=required_fields['latitudine'],
             create=required_fields['create'],
