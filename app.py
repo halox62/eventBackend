@@ -649,8 +649,6 @@ def createEvent():
             'create': request.form.get('create')
         }
 
-        print("Raw endTime:", request.form.get('endTime'))
-
         # Check for missing fields
         missing_fields = [field for field, value in required_fields.items() if not value]
         if missing_fields:
@@ -787,6 +785,9 @@ def getEventCode():
         
         current_date = datetime.now().date()
         current_time = datetime.now().time()
+
+        print(current_time)
+        print(Event.eventDate)
         
         ongoing_events = Event.query.filter(
             Event.eventCode.in_(subscribed_event_codes),
