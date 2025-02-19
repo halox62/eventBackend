@@ -786,9 +786,6 @@ def getEventCode():
         current_date = datetime.now().date()
         current_time = datetime.now().time()
 
-        print(current_time)
-        print(Event.eventDate)
-        
         ongoing_events = Event.query.filter(
             Event.eventCode.in_(subscribed_event_codes),
             Event.end == "false",
@@ -796,7 +793,7 @@ def getEventCode():
                 current_date > Event.eventDate, 
                 and_(
                     current_date == Event.eventDate,  # Eventi di oggi
-                    #current_time >= Event.endTime    # che sono già iniziati
+                    current_time >= Event.endTime    # che sono già iniziati
                 )
             )
         ).all()
