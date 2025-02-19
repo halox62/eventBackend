@@ -641,6 +641,7 @@ def createEvent():
             'eventName': request.form.get('eventName'),
             'eventCode': request.form.get('eventCode'),
             'eventDate': request.form.get('eventDate'),
+            'eventTime': request.form.get('eventTime'),  # Aggiunto per consistenza con il client
             'endDate': request.form.get('endDate'),
             'endTime': request.form.get('endTime'),
             'latitudine': request.form.get('latitudine'),
@@ -658,13 +659,18 @@ def createEvent():
         try:
             # Parse and validate dates and time
             event_date = datetime.strptime(required_fields['eventDate'], '%Y-%m-%d').date()
+            event_time = datetime.strptime(required_fields['eventTime'], '%H:%M').time()
             end_date = datetime.strptime(required_fields['endDate'], '%Y-%m-%d').date()
             end_time = datetime.strptime(required_fields['endTime'], '%H:%M').time()
             
-            # Validate date logic
-            if event_date > end_date:
+            # Create full datetime objects for comparison
+            event_datetime = datetime.combine(event_date, event_time)
+            end_datetime = datetime.combine(end_date, end_time)
+            
+            # Validate date and time logic
+            if event_datetime >= end_datetime:
                 return jsonify({
-                    "error": "Event start date cannot be after end date"
+                    "error": "Event end time must be after start time"
                 }), 400
 
             # Validate coordinates
@@ -696,9 +702,9 @@ def createEvent():
             eventCode=required_fields['eventCode'],
             eventDate=event_date,
             endDate=end_date,
-            endTime=end_time,
-            longitude=lon,
-            latitudine=lat,
+            endTime=end_time,  # Nota: Usa solo endTime come richiesto dal modello
+            longitude=required_fields['longitude'],
+            latitudine=required_fields['latitudine'],
             create=required_fields['create'],
             end="false"
         )
@@ -714,7 +720,8 @@ def createEvent():
 
     except Exception as e:
         db.session.rollback()  # Rollback in case of error
-        return jsonify({"error": str(e)}), 500  # Changed to 500 for server errors
+        app.logger.error(f"Error creating event: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/getCreateEvent', methods=['POST'])#query che ritorna gli eventi che sono stati creati da un'email
 @firebase_required
