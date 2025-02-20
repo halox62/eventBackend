@@ -773,7 +773,7 @@ def get_coordinate():
 def getEventCode():
     try:
         email = request.user.get("email")
-        client_time_str = request.args.get("clientTime")  # Leggi l'orario dal client
+        client_time_str = request.args.get("clientTime") 
         
         if not email:
             return jsonify({"error": "Email not provided"}), 400
@@ -1078,9 +1078,10 @@ def NameByCode():
             name = event.eventName
 
         endTime=event.endTime.strftime('%H:%M:%S')
+        startDate=event.eventDate.strftime('%Y-%m-%d')
 
 
-        name_res = {"name": name, "EndTime":endTime} 
+        name_res = {"name": name, "EndTime":endTime, "startDate":startDate} 
 
 
         if not name_res:
