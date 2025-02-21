@@ -1134,24 +1134,33 @@ def photoByCode():
         if not code:
             return jsonify({"error": "Event code not provided"}), 400
     
-        images = (db.session.query(FileRecord, UserAccount.profileImageUrl, UserAccount.emailUser)
+        # Join con FileRecord, UserAccount e conteggio dei like dalla tabella LikePhoto
+        query = (db.session.query(
+                    FileRecord,
+                    UserAccount.profileImageUrl,
+                    UserAccount.emailUser,
+                    db.func.count(LikePhoto.id).label('like_count')
+                 )
                  .join(UserAccount, FileRecord.userName == UserAccount.userName)
+                 .outerjoin(LikePhoto, FileRecord.id == LikePhoto.file_id)
                  .filter(FileRecord.code == code)
+                 .group_by(FileRecord.id, UserAccount.profileImageUrl, UserAccount.emailUser)
                  .all())
 
         image_links = [{
             "image_path": img[0].file_url,
-            "likes": int(img[0].point),
+            "likes": img[3], 
             "name": img[0].userName,
             "image_profile": img[1],
             "email": img[2]
-        } for img in images]
+        } for img in query]
 
         if not image_links:
             return jsonify({"message": "No images found for this event code."}), 404
         
         return jsonify(image_links), 200
-
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     except Exception as e:
         app.logger.error(f"Error in photoByCode: {str(e)}")
         return jsonify({"error": str(e)}), 500
