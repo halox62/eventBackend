@@ -1255,15 +1255,22 @@ def get_ranking():
         if not event_code:
             return jsonify({"error": "Event code not provided"}), 400
 
-        ranked_photos = FileRecord.query.filter_by(code=event_code).order_by(FileRecord.point.desc()).all()
-
-        print(ranked_photos)
+        
+        ranked_photos = (db.session.query(
+                FileRecord,
+                db.func.count(LikePhoto.id).label('like_count')
+            )
+            .outerjoin(LikePhoto, FileRecord.id == LikePhoto.file_id)
+            .filter(FileRecord.code == event_code)
+            .group_by(FileRecord.id)
+            .order_by(db.func.count(LikePhoto.id).desc())
+            .all())
 
         photos = []
-        for photo in ranked_photos:
+        for photo, like_count in ranked_photos:
             photos.append({
                 'image_path': photo.file_url,
-                'likes': int(photo.point),
+                'likes': like_count,
             })
 
         return jsonify({'photos': photos}), 200
