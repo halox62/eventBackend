@@ -1215,18 +1215,25 @@ def increment_like():
 @firebase_required
 def get_like():
     try:
-        
         email = request.user.get("email")
 
-       
-        liked_photos = db.session.query(LikePhoto, FileRecord) \
-            .join(FileRecord, LikePhoto.file_id == FileRecord.id) \
-            .filter(LikePhoto.emailUser == email) \
-            .all()
+        liked_photos = db.session.query(
+            FileRecord,
+            db.func.count(LikePhoto.id).label('like_count')
+        ).join(
+            LikePhoto, FileRecord.id == LikePhoto.file_id
+        ).filter(
+            FileRecord.id.in_(
+                db.session.query(LikePhoto.file_id).filter(LikePhoto.emailUser == email)
+            )
+        ).group_by(
+            FileRecord.id
+        ).all()
 
-        image_links = [{"image_path": record.file_url, "likes": record.point} for _, record in liked_photos]
-
-
+        image_links = [{
+            "image_path": record.file_url, 
+            "likes": like_count
+        } for record, like_count in liked_photos]
 
         if not image_links:
             return jsonify({"message": "No liked images found for this user."}), 404
