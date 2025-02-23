@@ -560,7 +560,7 @@ def get_Image():
 
     file_records = FileRecord.query.filter_by(emailUser=email).all()
 
-    file_records_dict = {record.filename: record.id for record in file_records}
+    file_records_dict = {record.file_url: record.id for record in file_records}
 
     for blob in blobs:
         blob.make_public()
