@@ -570,7 +570,7 @@ def get_Image():
     for blob in blobs:
         blob.make_public()
 
-        print(file_records_dict.get(blob.name, None))
+        print(blob.name)
         
         image_info = {
             "id": file_records_dict.get(blob.name, None), 
