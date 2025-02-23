@@ -1768,10 +1768,11 @@ def profile_page():
 
 @app.route('/infoPhoto', methods=['GET'])
 @firebase_required
-def get_photo_info(id_photo):
+def get_photo_info():
     try:
-
+        id_photo=request.args.get("photoId") 
         print(id_photo)
+
         entries = info.query.filter_by(idPhoto=id_photo).all()
         
         if not entries:
