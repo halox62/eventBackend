@@ -1770,6 +1770,8 @@ def profile_page():
 @firebase_required
 def get_photo_info(id_photo):
     try:
+
+        print(id_photo)
         entries = info.query.filter_by(idPhoto=id_photo).all()
         
         if not entries:
@@ -1810,7 +1812,6 @@ def upload_details():
                 'message': 'Mancano dei campi richiesti'
             }), 400
 
-        print(request.form.get('id'))
         new_info = info(
             idPhoto=request.form.get('id'), 
             type=request.form.get('type'),
