@@ -412,54 +412,43 @@ def healthcheck():
 @firebase_required
 def upload_image():
     try:
-        # Verifica autenticazione
         email = request.user.get("email")
         if not email:
             return jsonify({"error": "Autenticazione richiesta"}), 401
 
-        # Verifica presenza file
         if 'file' not in request.files:
             return jsonify({"error": "Nessun file caricato"}), 400
         
         file = request.files['file']
         
-        # Verifica nome file
         if file.filename == '':
             return jsonify({"error": "Nome file non valido"}), 400
 
-        # Verifica dimensione file
         if request.content_length > MAX_FILE_SIZE:
             return jsonify({"error": f"File troppo grande. Dimensione massima: {MAX_FILE_SIZE/1024/1024}MB"}), 400
 
-        # Verifica tipo file
         if not allowed_file(file.filename):
             return jsonify({"error": f"Tipo file non supportato. Formati permessi: {', '.join(ALLOWED_EXTENSIONS)}"}), 400
 
-        # Recupera informazioni utente
         user = UserAccount.query.filter_by(emailUser=email).first()
         if not user:
             return jsonify({"error": "Utente non trovato"}), 404
 
-        # Genera nome file sicuro
         secure_name = secure_filename(file.filename)
         
-        # Verifica duplicati
         existing_file = FileRecord.query.filter_by(filename=secure_name).first()
         if existing_file:
             return jsonify({"error": "File già caricato"}), 400
 
         try:
-            # Upload su Firebase Storage
             bucket = storage.bucket()
             blob_path = f'images/{email}/{secure_name}'
             blob = bucket.blob(blob_path)
             
-            # Imposta il content type corretto
             content_type = file.content_type or mimetypes.guess_type(secure_name)[0]
             blob.upload_from_file(file, content_type=content_type)
             blob.make_public()
 
-            # Salva record nel database
             new_file = FileRecord(
                 userName=user.userName,
                 emailUser=email,
@@ -472,9 +461,11 @@ def upload_image():
             db.session.add(new_file)
             db.session.commit()
 
+            file_id = new_file.id
+
             return jsonify({
                 'message': 'File caricato con successo',
-                'file_url': blob.public_url
+                'id': file_id
             }), 200
 
         except Exception as e:
