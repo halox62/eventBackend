@@ -221,6 +221,14 @@ class Event(db.Model):
     create = db.Column(db.String(80), nullable=False) 
     end = db.Column(db.String(80), nullable=False) 
 
+class info(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    idPhoto= db.Column(db.Integer)
+    type = db.Column(db.String(120), nullable=False)
+    brand = db.Column(db.String(120), nullable=False)
+    model = db.Column(db.String(120), nullable=False)
+    feedback = db.Column(db.String(80), nullable=False)  
+
 class EventSubscibe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     emailUser = db.Column(db.String(120), nullable=False)
@@ -1765,6 +1773,77 @@ def profile_page():
     """
 
     return render_template_string(html_template)
+
+
+@app.route('/infoPhoto', methods=['GET'])
+@firebase_required
+def get_photo_info(id_photo):
+    try:
+        entries = info.query.filter_by(idPhoto=id_photo).all()
+        
+        if not entries:
+            return jsonify({
+                'success': False,
+                'message': 'Nessuna informazione trovata per questo ID foto'
+            }), 404
+        
+        result = [{
+            'type': entry.type,
+            'brand': entry.brand,
+            'model': entry.model,
+            'feedback': entry.feedback
+        } for entry in entries]
+        
+        return jsonify({
+            'success': True,
+            'data': result
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Errore nel recupero delle informazioni: {str(e)}'
+        }), 500
+
+
+@app.route('/uploadInfo', methods=['POST'])
+@firebase_required
+def upload_details():
+    try:
+
+        # Verifica che tutti i campi necessari siano presenti
+        required_fields = ['brand', 'type', 'model', 'feedback']
+        if not all(field in request.form for field in required_fields):
+            return jsonify({
+                'success': False,
+                'message': 'Mancano dei campi richiesti'
+            }), 400
+
+        # Crea una nuova istanza del modello info
+        new_info = info(
+            idPhoto=request.form.get('idPhoto'),  # Assumendo che venga passato dall'app
+            type=request.form.get('type'),
+            brand=request.form.get('brand'),
+            model=request.form.get('model'),
+            feedback=request.form.get('feedback')
+        )
+
+        # Salva nel database
+        db.session.add(new_info)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Informazioni salvate con successo',
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Errore durante il salvataggio: {str(e)}'
+        }), 500
+
 
 if __name__ == '__main__':
     app.run(host = 'localhost', port = 8080, debug = True)    
