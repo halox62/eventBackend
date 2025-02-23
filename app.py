@@ -1770,7 +1770,7 @@ def profile_page():
 @firebase_required
 def get_photo_info():
     try:
-        id_photo=request.args.get("photoId") 
+        id_photo=request.args.get("id_photo") 
         print(id_photo)
 
         entries = info.query.filter_by(idPhoto=id_photo).all()
