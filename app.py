@@ -566,10 +566,11 @@ def get_Image():
     file_records_dict = {record.file_url: record.id for record in file_records}
     print(file_records_dict)
 
-    print(file_records_dict.get(blob.name, None))
 
     for blob in blobs:
         blob.make_public()
+
+        print(file_records_dict.get(blob.name, None))
         
         image_info = {
             "id": file_records_dict.get(blob.name, None), 
