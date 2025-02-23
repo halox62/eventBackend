@@ -1810,9 +1810,9 @@ def upload_details():
                 'message': 'Mancano dei campi richiesti'
             }), 400
 
-        # Crea una nuova istanza del modello info
+        print(request.form.get('id'))
         new_info = info(
-            idPhoto=request.form.get('idPhoto'),  # Assumendo che venga passato dall'app
+            idPhoto=request.form.get('id'), 
             type=request.form.get('type'),
             brand=request.form.get('brand'),
             model=request.form.get('model'),
