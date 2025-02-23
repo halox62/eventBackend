@@ -560,20 +560,18 @@ def get_Image():
 
     file_records = FileRecord.query.filter_by(emailUser=email).all()
 
-    print(email)
-    print(file_records)
-
-    file_records_dict = {record.file_url: record.id for record in file_records}
-    print(file_records_dict)
+    file_records_dict = {record.file_url.split("/")[-1]: record.id for record in file_records}
 
 
     for blob in blobs:
         blob.make_public()
 
-        print(blob.name)
+        file_name = blob.name.split("/")[-1]
+        
+        file_id = file_records_dict.get(file_name, None)
         
         image_info = {
-            "id": file_records_dict.get(blob.name, None), 
+            "id": file_id,  
             "url": blob.public_url
         }
         images.append(image_info)
