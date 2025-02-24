@@ -1919,14 +1919,11 @@ def getUserPhotos():
                 "data": []
             }), 200
 
-        # Conta quante volte ogni idPhoto appare in FileSave
         from collections import Counter
         photo_counts = Counter([saved.idPhoto for saved in saved_photos])
 
-        # Recupera i dettagli delle foto
         photos = FileRecord.query.filter(FileRecord.id.in_(photo_counts.keys())).all()
 
-        # Costruisci la risposta
         photos_data = []
         for photo in photos:
             photos_data.append({
@@ -1947,6 +1944,30 @@ def getUserPhotos():
             "success": False,
             "message": f"Errore durante il recupero delle foto: {str(e)}"
         }), 500
+
+@app.route('/delete_photo_save_id', methods=['POST'])
+@firebase_required
+def delete_photo_save_id():
+    try:
+
+        email = request.user.get("email")
+        photo_id = request.json.get('image_id')
+        if not photo_id:
+            return jsonify({'error': 'ID della foto mancante'}), 400
+
+        FileSave.query.filter_by(idPhoto=photo_id, emailUser=email).delete()
+        
+        db.session.flush()
+        
+        db.session.commit()
+    
+        
+    
+        return jsonify({'message':"ok"}), 200
+
+
+    except Exception as e:
+        return jsonify({'error': 'Errore generico', 'details': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host = 'localhost', port = 8080, debug = True)    
