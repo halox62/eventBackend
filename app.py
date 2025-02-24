@@ -1898,6 +1898,52 @@ def salvePhoto():
 
 
 
+@app.route('/getUserPhotos', methods=['GET'])
+@firebase_required
+def getUserPhotos():
+    try:
+        
+        email = request.user.get("email")
+        
+        if not email:
+            return jsonify({
+                "success": False,
+                "message": "Email non disponibile"
+            }), 400
+
+        saved_photos = FileSave.query.filter_by(emailUser=email).all()
+        
+        if not saved_photos:
+            return jsonify({
+                "success": True,
+                "message": f"Nessuna foto salvata per l'utente {email}",
+                "data": []
+            }), 200
+        
+        photo_ids = [saved.idPhoto for saved in saved_photos]
+        
+        photos = FileRecord.query.filter(FileRecord.id.in_(photo_ids)).all()
+        
+        photos_data = []
+        for photo in photos:
+            photos_data.append({
+                "id": photo.id,
+                "filename": photo.filename,
+                "file_url": photo.file_url
+            })
+
+        return jsonify({
+            "success": True,
+            "message": f"Trovate {len(photos_data)} foto salvate per l'utente {email}",
+            "data": photos_data
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Errore durante il recupero delle foto: {str(e)}"
+        }), 500
+
 
 
 if __name__ == '__main__':
