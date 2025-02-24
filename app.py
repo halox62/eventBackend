@@ -1853,7 +1853,7 @@ def upload_details():
             'message': f'Errore durante il salvataggio: {str(e)}'
         }), 500
 
-@app.route('/salvePhoto', methods=['POST'])
+@app.route('/salvePhoto', methods=['GET'])
 @firebase_required
 def salvePhoto():
     try:
@@ -1887,7 +1887,7 @@ def salvePhoto():
         return jsonify({
             "success": True,
             "message": "Foto salvata con successo",
-        }), 201
+        }), 200
 
     except Exception as e:
         db.session.rollback()
