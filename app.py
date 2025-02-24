@@ -192,6 +192,13 @@ class FileRecord(db.Model):
     def __repr__(self):
         return f'<FileRecord {self.filename}>'
 
+class FileSave(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    emailUser = db.Column(db.String(120))
+    idPhoto=db.Column(db.Integer)
+
+
+
 # Modello per gli utenti
 class UserAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1781,7 +1788,6 @@ def profile_page():
 def get_photo_info():
     try:
         id_photo=request.args.get("id_photo") 
-        print(id_photo)
 
         entries = info.query.filter_by(idPhoto=id_photo).all()
         
@@ -1846,6 +1852,52 @@ def upload_details():
             'success': False,
             'message': f'Errore durante il salvataggio: {str(e)}'
         }), 500
+
+@app.route('/salvePhoto', methods=['POST'])
+@firebase_required
+def salvePhoto():
+    try:
+        email = request.user.get("email")
+        
+       
+        id_photo = request.args.get("id_photo")
+        
+        if not email or not id_photo:
+            return jsonify({
+                "success": False,
+                "message": "Email e ID foto sono richiesti"
+            }), 400
+
+        try:
+            id_photo = int(id_photo)
+        except ValueError:
+            return jsonify({
+                "success": False,
+                "message": "ID foto deve essere un numero"
+            }), 400
+
+        new_file = FileSave(
+            emailUser=email,
+            idPhoto=id_photo
+        )
+
+        db.session.add(new_file)
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Foto salvata con successo",
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "message": f"Errore durante il salvataggio: {str(e)}"
+        }), 500
+
+
+
 
 
 if __name__ == '__main__':
