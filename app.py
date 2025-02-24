@@ -1902,9 +1902,8 @@ def salvePhoto():
 @firebase_required
 def getUserPhotos():
     try:
-        
         email = request.user.get("email")
-        
+
         if not email:
             return jsonify({
                 "success": False,
@@ -1912,24 +1911,29 @@ def getUserPhotos():
             }), 400
 
         saved_photos = FileSave.query.filter_by(emailUser=email).all()
-        
+
         if not saved_photos:
             return jsonify({
                 "success": True,
                 "message": f"Nessuna foto salvata per l'utente {email}",
                 "data": []
             }), 200
-        
-        photo_ids = [saved.idPhoto for saved in saved_photos]
-        
-        photos = FileRecord.query.filter(FileRecord.id.in_(photo_ids)).all()
-        
+
+        # Conta quante volte ogni idPhoto appare in FileSave
+        from collections import Counter
+        photo_counts = Counter([saved.idPhoto for saved in saved_photos])
+
+        # Recupera i dettagli delle foto
+        photos = FileRecord.query.filter(FileRecord.id.in_(photo_counts.keys())).all()
+
+        # Costruisci la risposta
         photos_data = []
         for photo in photos:
             photos_data.append({
                 "id": photo.id,
                 "filename": photo.filename,
-                "file_url": photo.file_url
+                "file_url": photo.file_url,
+                "point": photo_counts.get(photo.id, 0) 
             })
 
         return jsonify({
@@ -1943,8 +1947,6 @@ def getUserPhotos():
             "success": False,
             "message": f"Errore durante il recupero delle foto: {str(e)}"
         }), 500
-
-
 
 if __name__ == '__main__':
     app.run(host = 'localhost', port = 8080, debug = True)    
