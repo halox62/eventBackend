@@ -1853,7 +1853,7 @@ def upload_details():
             'message': f'Errore durante il salvataggio: {str(e)}'
         }), 500
 
-@app.route('/salvePhoto', methods=['GET'])
+@app.route('/salvePhoto', methods=['POST'])
 @firebase_required
 def salvePhoto():
     try:
