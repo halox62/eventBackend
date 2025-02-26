@@ -590,41 +590,58 @@ def get_Image():
 @firebase_required
 def get_profile():
 
-    email = request.user.get("email")
+    try:
+        
+        email = request.user.get("email")
 
-    if not email:
-        return jsonify({"error": "Email not provided"}), 400
+        if not email:
+            return jsonify({"error": "Email not provided"}), 400
 
-    user = UserAccount.query.filter_by(emailUser=email).first()
-    if user is None:
-        return jsonify({"error": "User not found"}), 404
-    
+        user = UserAccount.query.filter_by(emailUser=email).first()
+        if user is None:
+            return jsonify({"error": "User not found"}), 404
+        
+        
+        file_count = FileSave.query.filter_by(emailUser=email).count()
 
-    return jsonify({
-        "userName": user.userName,
-        "profileImageUrl": user.profileImageUrl,
-        "point":user.point
-    }), 200
+        return jsonify({
+            "userName": user.userName,
+            "profileImageUrl": user.profileImageUrl,
+            "point": user.point,
+            "save": file_count  
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": "error"}), 500
 
 @app.route('/profileS', methods=['POST'])
 @firebase_required
 def get_profileS():
 
-    email = request.json.get('email')
-
-    if not email:
-        return jsonify({"error": "Email not provided"}), 400
-
-    user = UserAccount.query.filter_by(emailUser=email).first()
-    if user is None:
-        return jsonify({"error": "User not found"}), 404
     
+    try:
+        
+        email = request.user.get("email")
 
-    return jsonify({
-        "userName": user.userName,
-        "profileImageUrl": user.profileImageUrl,
-        "point":user.point
-    }), 200
+        if not email:
+            return jsonify({"error": "Email not provided"}), 400
+
+        user = UserAccount.query.filter_by(emailUser=email).first()
+        if user is None:
+            return jsonify({"error": "User not found"}), 404
+        
+        
+        file_count = FileSave.query.filter_by(emailUser=email).count()
+
+        return jsonify({
+            "userName": user.userName,
+            "profileImageUrl": user.profileImageUrl,
+            "point": user.point,
+            "save": file_count  
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": "error"}), 500
 
 @app.route('/getImageS', methods=['POST'])
 @firebase_required
