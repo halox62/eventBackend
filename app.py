@@ -657,6 +657,7 @@ def get_ImageS():
     
     images = []
     for record in file_records:
+        print(record)
         blob = bucket.list_blobs(prefix=f'images/{email}/')  
         blob.make_public()
         
