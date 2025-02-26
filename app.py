@@ -1875,8 +1875,6 @@ def upload_details():
 def salvePhoto():
     try:
         email = request.user.get("email")
-        
-       
         id_photo = request.args.get("id_photo")
         
         if not email or not id_photo:
@@ -1892,6 +1890,20 @@ def salvePhoto():
                 "success": False,
                 "message": "ID foto deve essere un numero"
             }), 400
+
+      
+        existing_record = FileSave.query.filter_by(
+            emailUser=email,
+            idPhoto=id_photo
+        ).first()
+        
+       
+        if existing_record:
+            return jsonify({
+                "success": False,
+                "message": "Hai già salvato questa foto",
+                "alreadySaved": True
+            }), 409  
 
         new_file = FileSave(
             emailUser=email,
@@ -1912,7 +1924,6 @@ def salvePhoto():
             "success": False,
             "message": f"Errore durante il salvataggio: {str(e)}"
         }), 500
-
 
 
 @app.route('/getUserPhotos', methods=['GET'])
