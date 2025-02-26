@@ -661,6 +661,7 @@ def get_ImageS():
     for blob in blobs:
         blob.make_public() 
         images.append(blob.public_url)
+        images.append(blob.id)
     
     return jsonify({"images": images}), 200
 
@@ -1894,7 +1895,7 @@ def salvePhoto():
                 "success": False,
                 "message": "Hai già salvato questa foto",
                 "alreadySaved": True
-            }), 409  
+            }), 400
 
         new_file = FileSave(
             emailUser=email,
