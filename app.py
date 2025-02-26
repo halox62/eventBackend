@@ -1042,12 +1042,6 @@ def uploadEventImage():
                 )
             )
     
-        if (current_date>event.endDate or 
-            (event.endDate == current_date and event.endTime > current_time)):
-            return jsonify({"error": "Evento non ancora iniziato"}), 404   
-            
-
-
         event_location = (float(event.latitudine), float(event.longitude))
         user_location = (latitudine, longitudine)
         distance = geodesic(user_location, event_location).meters
