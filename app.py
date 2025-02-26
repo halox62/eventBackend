@@ -1042,8 +1042,8 @@ def uploadEventImage():
                 )
             )
     
-        if (event.end=="false" and (current_date>event.endDate or 
-            (event.endDate == current_date and event.endTime > current_time))):
+        if (current_date>event.endDate or 
+            (event.endDate == current_date and event.endTime > current_time)):
             return jsonify({"error": "Evento non ancora iniziato"}), 404   
             
 
