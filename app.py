@@ -646,12 +646,12 @@ def get_profileS():
 @app.route('/getImageS', methods=['POST'])
 @firebase_required
 def get_ImageS():
-    email = request.json.get('email')
+    email = request.user.get("email")
     
     if not email:
         return jsonify({"error": "Email not provided"}), 400
     
-    # Recupera i record dal database per l'email specificata
+
     file_records = FileRecord.query.filter_by(emailUser=email).all()
     
     images = []
