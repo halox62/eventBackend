@@ -646,23 +646,25 @@ def get_profileS():
 @app.route('/getImageS', methods=['POST'])
 @firebase_required
 def get_ImageS():
-    
     email = request.user.get("email")
-
-   
+    
     if not email:
         return jsonify({"error": "Email not provided"}), 400
-
     
-    images = []
-    blobs = bucket.list_blobs(prefix=f'images/{email}/')  
-
    
-    for blob in blobs:
-        blob.make_public() 
-        images.append(blob.public_url)
+    file_records = FileRecord.query.filter_by(emailUser=email).all()
     
-    return jsonify({"images": images}), 200
+    result = []
+    for record in file_records:
+        result.append({
+            "id": record.id,
+            "file_url": record.file_url,
+            "filename": record.filename,
+            "code": record.code,
+            "point": record.point
+        })
+    
+    return jsonify({"images": result}), 200
 
 @app.route('/createEvent', methods=['POST'])
 @firebase_required
