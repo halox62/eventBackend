@@ -30,7 +30,7 @@ from geopy.distance import geodesic
 import logging
 from werkzeug.utils import secure_filename
 import mimetypes
-
+from collections import Counter
 
 # Endpoint per caricare l'immagine
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -569,6 +569,9 @@ def get_Image():
 
     file_records_dict = {record.file_url.split("/")[-1]: record.id for record in file_records}
 
+    saved_photos = FileSave.query.filter_by(emailUser=email).all()
+
+    photo_counts = Counter([saved.idPhoto for saved in saved_photos])
 
     for blob in blobs:
         blob.make_public()
@@ -577,11 +580,13 @@ def get_Image():
         
         file_id = file_records_dict.get(file_name, None)
         
-        image_info = {
-            "id": file_id,  
-            "url": blob.public_url
-        }
-        images.append(image_info)
+        if file_id is not None:
+            image_info = {
+                "id": file_id,  
+                "url": blob.public_url,
+                "point": photo_counts.get(file_id, 0) 
+            }
+            images.append(image_info)
 
     return jsonify({"images": images}), 200
     
@@ -646,25 +651,23 @@ def get_profileS():
 @app.route('/getImageS', methods=['POST'])
 @firebase_required
 def get_ImageS():
-    email = request.user.get("email")
     
+    email = request.user.get("email")
+
+   
     if not email:
         return jsonify({"error": "Email not provided"}), 400
+
     
+    images = []
+    blobs = bucket.list_blobs(prefix=f'images/{email}/')  
+
    
-    file_records = FileRecord.query.filter_by(emailUser=email).all()
+    for blob in blobs:
+        blob.make_public() 
+        images.append(blob.public_url)
     
-    result = []
-    for record in file_records:
-        result.append({
-            "id": record.id,
-            "file_url": record.file_url,
-            "filename": record.filename,
-            "code": record.code,
-            "point": record.point
-        })
-    
-    return jsonify({"images": result}), 200
+    return jsonify({"images": images}), 200
 
 @app.route('/createEvent', methods=['POST'])
 @firebase_required
@@ -1804,7 +1807,7 @@ def get_photo_info():
         if not entries:
             return jsonify({
                 'success': False,
-                'message': 'Nessuna informazione trovata per questo ID foto'
+                'message': 'Nessuna informazione trovata per questo foto'
             }), 404
         
         result = [{
@@ -1940,7 +1943,6 @@ def getUserPhotos():
                 "data": []
             }), 200
 
-        from collections import Counter
         photo_counts = Counter([saved.idPhoto for saved in saved_photos])
 
         photos = FileRecord.query.filter(FileRecord.id.in_(photo_counts.keys())).all()
