@@ -643,31 +643,24 @@ def get_profileS():
     except Exception as e:
         return jsonify({"error": "error"}), 500
 
-
 @app.route('/getImageS', methods=['POST'])
 @firebase_required
 def get_ImageS():
-    email = request.user.get("email")
     
+    email = request.user.get("email")
+
+   
     if not email:
         return jsonify({"error": "Email not provided"}), 400
-    
 
-    file_records = FileRecord.query.filter_by(emailUser=email).all()
     
     images = []
-    for record in file_records:
-        print(record)
-        blob = bucket.list_blobs(prefix=f'images/{email}/')  
-        blob.make_public()
-        
-        images.append({
-            "id": record.id,
-            "url": record.file_url,
-            "filename": record.filename,
-            "code": record.code,
-            "point": record.point
-        })
+    blobs = bucket.list_blobs(prefix=f'images/{email}/')  
+
+   
+    for blob in blobs:
+        blob.make_public() 
+        images.append(blob.public_url)
     
     return jsonify({"images": images}), 200
 
