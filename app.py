@@ -1489,7 +1489,7 @@ def search_profiles():
     try:
         data = request.get_json()
         query = data.get('profilo', '').strip()
-        email = request.user.get("email")
+        email = data.get("email")
 
         if not query:
             return jsonify({"msg": "Query non fornita"}), 400
