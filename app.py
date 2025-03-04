@@ -658,7 +658,6 @@ def get_ImageS():
     data = request.get_json()
     email = data.get('email')
 
-    print(email)
    
     if not email:
         return jsonify({"error": "Email not provided"}), 400
@@ -1473,6 +1472,12 @@ def delete_photo_by_url():
      
         for like in likes:
             db.session.delete(like)
+
+        db.session.flush()
+
+        info_entries = info.query.filter_by(idPhoto=photo.id).all()
+        for entry in info_entries:
+            db.session.delete(entry)
 
         db.session.flush()
 
