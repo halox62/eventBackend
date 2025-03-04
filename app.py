@@ -31,8 +31,7 @@ import logging
 from werkzeug.utils import secure_filename
 import mimetypes
 from collections import Counter
-from profanity_check import predict, predict_prob
-import joblib
+from better_profanity import profanity
 
 # Endpoint per caricare l'immagine
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -58,6 +57,8 @@ FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID")
 app = Flask(__name__)
 
 CORS(app) 
+
+profanity.load_censor_words()
 
 
 
@@ -1864,14 +1865,12 @@ def get_photo_info():
         }), 500
 
 def validate_field(field_name, field_value):
-            profanity_prob = predict_prob([field_value])[0]
-            print(profanity_prob)
-            if profanity_prob > 0.7:
-                return f'Il campo {field_name} contiene contenuti potenzialmente inappropriati'
-            return None
+    if profanity.contains_profanity(field_value): 
+        return f'Il campo {field_name} contiene contenuti potenzialmente inappropriati'
+    return None
+
 
 @app.route('/uploadInfo', methods=['POST'])
-@firebase_required
 def upload_details():
     try:
         required_fields = ['brand', 'type', 'model', 'feedback']
@@ -1880,7 +1879,6 @@ def upload_details():
                 'success': False,
                 'message': 'Mancano dei campi richiesti'
             }), 400
-    
 
         fields_to_check = {
             'feedback': request.form.get('feedback', ''),
@@ -1897,24 +1895,20 @@ def upload_details():
                     'message': error_message
                 }), 400
 
-        new_info = info(
-            idPhoto=request.form.get('id'), 
-            type=fields_to_check['type'],
-            brand=fields_to_check['brand'],
-            model=fields_to_check['model'],
-            feedback=fields_to_check['feedback']
-        )
-
-        db.session.add(new_info)
-        db.session.commit()
+        new_info = {
+            "type": fields_to_check['type'],
+            "brand": fields_to_check['brand'],
+            "model": fields_to_check['model'],
+            "feedback": fields_to_check['feedback']
+        }
 
         return jsonify({
             'success': True,
             'message': 'Informazioni salvate con successo',
+            'data': new_info
         }), 200
 
     except Exception as e:
-        db.session.rollback()
         return jsonify({
             'success': False,
             'message': f'Errore durante il salvataggio: {str(e)}'
