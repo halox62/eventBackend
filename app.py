@@ -658,6 +658,7 @@ def get_ImageS():
     data = request.get_json()
     email = data.get('email')
 
+    print(email)
    
     if not email:
         return jsonify({"error": "Email not provided"}), 400
