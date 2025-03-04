@@ -1865,6 +1865,7 @@ def get_photo_info():
 
 def validate_field(field_name, field_value):
             profanity_prob = predict_prob([field_value])[0]
+            print(profanity_prob)
             if profanity_prob > 0.7:
                 return f'Il campo {field_name} contiene contenuti potenzialmente inappropriati'
             return None
