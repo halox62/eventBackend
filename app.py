@@ -662,15 +662,32 @@ def get_ImageS():
     if not email:
         return jsonify({"error": "Email not provided"}), 400
 
-    
     images = []
-    blobs = bucket.list_blobs(prefix=f'images/{email}/')  
+    blobs = bucket.list_blobs(prefix=f'images/{email}/')
 
-   
+    file_records = FileRecord.query.filter_by(emailUser=email).all()
+
+    file_records_dict = {record.file_url.split("/")[-1]: record.id for record in file_records}
+
+    saved_photos = FileSave.query.filter_by(emailUser=email).all()
+
+    photo_counts = Counter([saved.idPhoto for saved in saved_photos])
+
     for blob in blobs:
-        blob.make_public() 
-        images.append(blob.public_url)
-    
+        blob.make_public()
+
+        file_name = blob.name.split("/")[-1]
+        
+        file_id = file_records_dict.get(file_name, None)
+        
+        if file_id is not None:
+            image_info = {
+                "id": file_id,  
+                "url": blob.public_url,
+                "point": photo_counts.get(file_id, 0) 
+            }
+            images.append(image_info)
+
     return jsonify({"images": images}), 200
 
 @app.route('/createEvent', methods=['POST'])
