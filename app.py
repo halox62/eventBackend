@@ -629,7 +629,7 @@ def get_profileS():
     try:
         
         data = request.get_json()
-        email = data.get('code')
+        email = data.get('email')
 
         if not email:
             return jsonify({"error": "Email not provided"}), 400
@@ -656,7 +656,7 @@ def get_profileS():
 def get_ImageS():
     
     data = request.get_json()
-    email = data.get('code')
+    email = data.get('email')
 
    
     if not email:
