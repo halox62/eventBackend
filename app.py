@@ -31,6 +31,7 @@ import logging
 from werkzeug.utils import secure_filename
 import mimetypes
 from collections import Counter
+from profanity_check import predict, predict_prob
 
 # Endpoint per caricare l'immagine
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -1861,29 +1862,47 @@ def get_photo_info():
             'message': f'Errore nel recupero delle informazioni: {str(e)}'
         }), 500
 
+def validate_field(field_name, field_value):
+            profanity_prob = predict_prob([field_value])[0]
+            if profanity_prob > 0.7:
+                return f'Il campo {field_name} contiene contenuti potenzialmente inappropriati'
+            return None
 
 @app.route('/uploadInfo', methods=['POST'])
 @firebase_required
 def upload_details():
     try:
-
-        # Verifica che tutti i campi necessari siano presenti
         required_fields = ['brand', 'type', 'model', 'feedback']
         if not all(field in request.form for field in required_fields):
             return jsonify({
                 'success': False,
                 'message': 'Mancano dei campi richiesti'
             }), 400
+    
+
+        fields_to_check = {
+            'feedback': request.form.get('feedback', ''),
+            'brand': request.form.get('brand', ''),
+            'type': request.form.get('type', ''),
+            'model': request.form.get('model', '')
+        }
+
+        for field, value in fields_to_check.items():
+            error_message = validate_field(field, value)
+            if error_message:
+                return jsonify({
+                    'success': False,
+                    'message': error_message
+                }), 400
 
         new_info = info(
             idPhoto=request.form.get('id'), 
-            type=request.form.get('type'),
-            brand=request.form.get('brand'),
-            model=request.form.get('model'),
-            feedback=request.form.get('feedback')
+            type=fields_to_check['type'],
+            brand=fields_to_check['brand'],
+            model=fields_to_check['model'],
+            feedback=fields_to_check['feedback']
         )
 
-        # Salva nel database
         db.session.add(new_info)
         db.session.commit()
 
