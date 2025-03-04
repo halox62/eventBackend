@@ -32,6 +32,7 @@ from werkzeug.utils import secure_filename
 import mimetypes
 from collections import Counter
 from profanity_check import predict, predict_prob
+import joblib
 
 # Endpoint per caricare l'immagine
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
