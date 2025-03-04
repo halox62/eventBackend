@@ -1481,6 +1481,13 @@ def delete_photo_by_url():
 
         db.session.flush()
 
+        file_saves = FileSave.query.filter_by(idPhoto=photo.id).all()
+        for save in file_saves:
+            db.session.delete(save)
+
+        db.session.flush()
+
+
         FileRecord.query.filter_by(id=photo.id).delete()
         
         db.session.flush()
