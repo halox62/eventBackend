@@ -526,7 +526,7 @@ def register():
 
 @app.route('/profileInformation', methods=['GET'])
 def profile_with_images():
-    # Estrai l'email dai parametri della query string
+
     email = request.args.get("email")
 
     if not email:
@@ -618,15 +618,18 @@ def get_profile():
 
     except Exception as e:
         return jsonify({"error": "error"}), 500
+    
+
+
 
 @app.route('/profileS', methods=['POST'])
 @firebase_required
 def get_profileS():
 
-    
     try:
         
-        email = request.user.get("email")
+        data = request.get_json()
+        email = data.get('code')
 
         if not email:
             return jsonify({"error": "Email not provided"}), 400
@@ -652,7 +655,8 @@ def get_profileS():
 @firebase_required
 def get_ImageS():
     
-    email = request.user.get("email")
+    data = request.get_json()
+    email = data.get('code')
 
    
     if not email:
@@ -673,13 +677,12 @@ def get_ImageS():
 @firebase_required
 def createEvent():
     try:
-        # Get form data
         required_fields = {
             'email': request.user.get("email"),
             'eventName': request.form.get('eventName'),
             'eventCode': request.form.get('eventCode'),
             'eventDate': request.form.get('eventDate'),
-            'eventTime': request.form.get('eventTime'),  # Aggiunto per consistenza con il client
+            'eventTime': request.form.get('eventTime'), 
             'endDate': request.form.get('endDate'),
             'endTime': request.form.get('endTime'),
             'latitudine': request.form.get('latitudine'),
@@ -687,7 +690,7 @@ def createEvent():
             'create': request.form.get('create')
         }
 
-        # Check for missing fields
+       
         missing_fields = [field for field, value in required_fields.items() if not value]
         if missing_fields:
             return jsonify({
@@ -1489,7 +1492,7 @@ def search_profiles():
     try:
         data = request.get_json()
         query = data.get('profilo', '').strip()
-        email = data.get("email")
+        email = request.user.get("email")
 
         if not query:
             return jsonify({"msg": "Query non fornita"}), 400
