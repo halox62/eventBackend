@@ -1902,6 +1902,9 @@ def upload_details():
             "feedback": fields_to_check['feedback']
         }
 
+        db.session.add(new_info)
+        db.session.commit()
+
         return jsonify({
             'success': True,
             'message': 'Informazioni salvate con successo',
@@ -2039,6 +2042,28 @@ def delete_photo_save_id():
 
     except Exception as e:
         return jsonify({'error': 'Errore generico', 'details': str(e)}), 500
+
+
+@app.route('/update-username', methods=['POST'])
+@firebase_required
+def update_username():
+    data = request.json
+    email = request.user.get("email")
+    new_username = data.get('newUserName')
+    
+    if not email or not new_username:
+        return jsonify({"error": "emailUser and newUserName are required"}), 400
+
+    user = UserAccount.query.filter_by(emailUser=email).first()
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    user.userName = new_username
+    db.session.commit()
+    
+    return jsonify({"message": "Username updated successfully", "newUserName": user.userName})
+
 
 if __name__ == '__main__':
     app.run(host = 'localhost', port = 8080, debug = True)    
