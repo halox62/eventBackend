@@ -2050,11 +2050,15 @@ def update_username():
     data = request.json
     email = request.user.get("email")
     new_username = data.get('newUserName')
+
+    print(email)
     
     if not email or not new_username:
         return jsonify({"error": "emailUser and newUserName are required"}), 400
 
     user = UserAccount.query.filter_by(emailUser=email).first()
+
+    print(user)
     
     if not user:
         return jsonify({"error": "User not found"}), 404
