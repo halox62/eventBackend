@@ -2096,13 +2096,12 @@ def update_username():
 def search_user():
 
     email = request.form.get('email')
-    username = request.form.get('userName')
     
-    if not email or not username:
+    if not email :
         return jsonify({'success': False, 'message': 'Email and username are required'}), 400
     
 
-    user = UserAccount.query.filter_by(emailUser=email, userName=username).first()
+    user = UserAccount.query.filter_by(emailUser=email).first()
     
     if user:
         return jsonify({'success': True, 'message': 'User found'}), 200
