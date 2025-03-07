@@ -2092,6 +2092,24 @@ def update_username():
     
     return jsonify({"message": "Username updated successfully", "newUserName": user.userName})
 
+@app.route('/search', methods=['POST'])
+def search_user():
+
+    email = request.form.get('email')
+    username = request.form.get('userName')
+    
+    if not email or not username:
+        return jsonify({'success': False, 'message': 'Email and username are required'}), 400
+    
+
+    user = UserAccount.query.filter_by(emailUser=email, userName=username).first()
+    
+    if user:
+        return jsonify({'success': True, 'message': 'User found'}), 200
+    else:
+        return jsonify({'success': False, 'message': 'Account non presente'}), 404
+
+
 
 if __name__ == '__main__':
     app.run(host = 'localhost', port = 8080, debug = True)    
