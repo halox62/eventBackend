@@ -1362,28 +1362,52 @@ def set_position_true():
 @firebase_required
 def get_scoreboard():
     try:
-        top_users = (
+        current_user_email = request.user.get("email")
+        
+
+        all_users_ranked = (
             db.session.query(UserAccount)
             .order_by(UserAccount.point.desc())
-            .limit(100)
             .all()
         )
-
+        
+        top_users = all_users_ranked[:100]
+        
         if not top_users:
             return jsonify({"message": "No users found"}), 404
-
+        
+        current_user_position = None
+        current_user_data = None
+        
+        for position, user in enumerate(all_users_ranked):
+            if user.emailUser == current_user_email:
+                current_user_position = position + 1 
+                current_user_data = {
+                    "id": user.id,
+                    "emailUser": user.emailUser,
+                    "userName": user.userName,
+                    "profileImageUrl": user.profileImageUrl,
+                    "point": user.point,
+                    "position": current_user_position
+                }
+                break
+        
         scoreboard = []
-        for user in top_users:
+        for position, user in enumerate(top_users):
             scoreboard.append({
                 "id": user.id,
                 "emailUser": user.emailUser,
                 "userName": user.userName,
                 "profileImageUrl": user.profileImageUrl,
-                "point": user.point
+                "point": user.point,
+                "position": position + 1  
             })
-
-        return jsonify({"scoreboard": scoreboard}), 200
-
+        
+        return jsonify({
+            "scoreboard": scoreboard, 
+            "currentUser": current_user_data
+        }), 200
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
