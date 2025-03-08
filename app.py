@@ -1904,6 +1904,7 @@ def upload_details():
                 'message': 'Mancano dei campi richiesti'
             }), 400
 
+        """
         fields_to_check = {
             'feedback': request.form.get('feedback', ''),
             'brand': request.form.get('brand', ''),
@@ -1918,12 +1919,21 @@ def upload_details():
                     'success': False,
                     'message': error_message
                 }), 400
+             
 
         new_info = {
             "type": fields_to_check['type'],
             "brand": fields_to_check['brand'],
             "model": fields_to_check['model'],
             "feedback": fields_to_check['feedback']
+        }
+        """
+
+        new_info = {
+            "type": request.form.get('type', ''),
+            "brand": request.form.get('brand', ''),
+            "model":  request.form.get('model', ''),
+            "feedback": request.form.get('feedback', '')
         }
 
         db.session.add(new_info)
