@@ -1897,52 +1897,28 @@ def validate_field(field_name, field_value):
 @app.route('/uploadInfo', methods=['POST'])
 def upload_details():
     try:
-        required_fields = ['brand', 'type', 'model', 'feedback']
+        required_fields = ['id', 'brand', 'type', 'model', 'feedback']
         if not all(field in request.form for field in required_fields):
             return jsonify({
                 'success': False,
                 'message': 'Mancano dei campi richiesti'
             }), 400
 
-        """
-        fields_to_check = {
-            'feedback': request.form.get('feedback', ''),
-            'brand': request.form.get('brand', ''),
-            'type': request.form.get('type', ''),
-            'model': request.form.get('model', '')
-        }
+       
+        new_device_info = info(
+            idPhoto=int(request.form.get('id')),
+            type=request.form.get('type', ''),
+            brand=request.form.get('brand', ''),
+            model=request.form.get('model', ''),
+            feedback=request.form.get('feedback', '')
+        )
 
-        for field, value in fields_to_check.items():
-            error_message = validate_field(field, value)
-            if error_message:
-                return jsonify({
-                    'success': False,
-                    'message': error_message
-                }), 400
-             
-
-        new_info = {
-            "type": fields_to_check['type'],
-            "brand": fields_to_check['brand'],
-            "model": fields_to_check['model'],
-            "feedback": fields_to_check['feedback']
-        }
-        """
-
-        new_info = {
-            "type": request.form.get('type', ''),
-            "brand": request.form.get('brand', ''),
-            "model":  request.form.get('model', ''),
-            "feedback": request.form.get('feedback', '')
-        }
-
-        db.session.add(new_info)
+        db.session.add(new_device_info)
         db.session.commit()
 
         return jsonify({
             'success': True,
-            'message': 'Informazioni salvate con successo',
-            'data': new_info
+            'message': 'Informazioni salvate con successo'
         }), 200
 
     except Exception as e:
