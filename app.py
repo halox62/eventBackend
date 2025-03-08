@@ -530,7 +530,7 @@ def register():
 @app.route('/profileInformation', methods=['GET'])
 def profile_with_images():
 
-    email = request.user.get("email")
+    email = request.args.get("email")
 
     if not email:
         return jsonify({"error": "Email not provided"}), 400
