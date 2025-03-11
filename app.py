@@ -1183,8 +1183,9 @@ def photoProfilesByEvent():
 def photoByCode():
     try:
         data = request.json
-        email = request.user.get("email")
         code = data.get('code')
+
+        print(code);
 
         if not code:
             return jsonify({"error": "Event code not provided"}), 400
