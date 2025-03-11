@@ -1183,9 +1183,10 @@ def photoProfilesByEvent():
 def photoByCode():
     try:
         data = request.json
+        email = request.user.get("email")
         code = data.get('code')
 
-        print(code);
+        print(code)
 
         if not code:
             return jsonify({"error": "Event code not provided"}), 400
@@ -1201,6 +1202,8 @@ def photoByCode():
                  .filter(FileRecord.code == code)
                  .group_by(FileRecord.id, UserAccount.profileImageUrl, UserAccount.emailUser)
                  .all())
+        
+        print(query)
 
         image_links = [{
             "id": img[0].id, 
