@@ -1186,8 +1186,6 @@ def photoByCode():
         email = request.user.get("email")
         code = data.get('code')
 
-        print(code)
-
         if not code:
             return jsonify({"error": "Event code not provided"}), 400
     
@@ -1203,7 +1201,6 @@ def photoByCode():
                  .group_by(FileRecord.id, UserAccount.profileImageUrl, UserAccount.emailUser)
                  .all())
         
-        print(query)
 
         image_links = [{
             "id": img[0].id, 
@@ -1217,6 +1214,8 @@ def photoByCode():
 
         if not image_links:
             return jsonify({"message": "No images found for this event code."}), 404
+        
+        print(image_links)
         
         return jsonify(image_links), 200
     except Exception as e:
