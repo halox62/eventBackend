@@ -1055,11 +1055,6 @@ def uploadEventImage():
         if(event.end=="true"):
             return jsonify({"error": "Evento finito"}), 404
         
-        
-        
-        current_date = datetime.now().date()
-        current_time = datetime.now().time()
-
         and_(Event.end=="false",
                 or_(
                     datetime.now().date()>Event.endDate,
@@ -1104,10 +1099,13 @@ def uploadEventImage():
         
         db.session.add(new_file)
         db.session.commit()
+        file_id = new_file.id
 
+          
         return jsonify({
             'message': 'File caricato con successo',
-            'file_url': blob.public_url
+            'file_url': blob.public_url,
+             'id': file_id
         }), 200
 
     except Exception as e:
@@ -1209,7 +1207,7 @@ def photoByCode():
             "name": img[0].userName,
             "image_profile": img[1],
             "email": img[2],
-            "point": img[4]  # Use the count from FileSave table
+            "point": img[4] 
         } for img in query]
         
         if not image_links:
