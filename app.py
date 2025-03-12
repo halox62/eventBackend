@@ -1184,33 +1184,34 @@ def photoByCode():
     try:
         data = request.json
         code = data.get('code')
-
+        
         if not code:
             return jsonify({"error": "Event code not provided"}), 400
-    
-        query = (db.session.query(
-                    FileRecord,
-                    UserAccount.profileImageUrl,
-                    UserAccount.emailUser,
-                    db.func.count(LikePhoto.id).label('like_count')
-                 )
-                 .join(UserAccount, FileRecord.userName == UserAccount.userName)
-                 .outerjoin(LikePhoto, FileRecord.id == LikePhoto.file_id)
-                 .filter(FileRecord.code == code)
-                 .group_by(FileRecord.id, UserAccount.profileImageUrl, UserAccount.emailUser)
-                 .all())
         
-
+        query = (db.session.query(
+                 FileRecord,
+                 UserAccount.profileImageUrl,
+                 UserAccount.emailUser,
+                 db.func.count(LikePhoto.id).label('like_count'),
+                 db.func.count(FileSave.id).label('save_count')
+              )
+              .join(UserAccount, FileRecord.userName == UserAccount.userName)
+              .outerjoin(LikePhoto, FileRecord.id == LikePhoto.file_id)
+              .outerjoin(FileSave, FileRecord.id == FileSave.idPhoto)
+              .filter(FileRecord.code == code)
+              .group_by(FileRecord.id, UserAccount.profileImageUrl, UserAccount.emailUser)
+              .all())
+        
         image_links = [{
-            "id": img[0].id, 
+            "id": img[0].id,
             "image_path": img[0].file_url,
-            "likes": img[3], 
+            "likes": img[3],
             "name": img[0].userName,
             "image_profile": img[1],
             "email": img[2],
-            "point": img[0].point 
+            "point": img[4]  # Use the count from FileSave table
         } for img in query]
-
+        
         if not image_links:
             return jsonify({"message": "No images found for this event code."}), 404
         
