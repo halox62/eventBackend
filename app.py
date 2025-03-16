@@ -1663,7 +1663,7 @@ def profile_page():
         :root {
             --surface-variant: #f5f5f5;
             --primary-green: rgb(76, 175, 80);
-            --primary-blue: #1e88e5; /* Blu per i salvataggi */
+            --primary-blue: #1e88e5;
         }
 
         body {
@@ -1785,7 +1785,7 @@ def profile_page():
                             <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
-                            <span>0 salve</span>
+                            <span>0 save</span>
                         </div>
                     </div>
                 </div>
@@ -1883,8 +1883,8 @@ def profile_page():
             try {
                 const data = await fetchProfileWithImages(email);
                 document.getElementById('userName').textContent = data.userName || 'Utente sconosciuto';
-                document.getElementById('points').textContent = `${data.point || 0} punti`;
-                document.getElementById('totalSaves').querySelector('span').textContent = `${data.save || 0} salvataggi`;
+                document.getElementById('points').textContent = `${data.point || 0} points`;
+                document.getElementById('totalSaves').querySelector('span').textContent = `${data.save || 0} save`;
 
                 const profileImage = document.getElementById('profileImage');
                 if (data.profileImageUrl) profileImage.src = data.profileImageUrl;
