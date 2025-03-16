@@ -125,7 +125,6 @@ def firebase_required(f):
 def update_event_rankings():
     with app.app_context():
         events = Event.query.filter(
-            #calcolare un evento una sola volta
             or_(
                 Event.endDate > datetime.now().date(),
                 and_(
@@ -136,22 +135,29 @@ def update_event_rankings():
         ).all()
         for event in events:
             print(f"Processing event: {event.eventCode}")
-            event.end="true"
+            event.end = "true"
             
             photos = FileRecord.query.filter_by(code=event.eventCode).all()
-            sorted_photos = sorted(photos, key=lambda x: x.likes, reverse=True)
+            sorted_photos = sorted(photos, key=lambda x: int(x.point), reverse=True)
             
             for index, photo in enumerate(sorted_photos):
                 user = UserAccount.query.filter_by(emailUser=photo.emailUser).first()
                 if user:
-                    #bool status= EventSubscibe.query.filter_by(emailUser=user.emailUser, position="true")
                     score_multiplier = 100 - index if index < 100 else 1
-                    event_points = score_multiplier * photo.likes
-                    user.point += event_points
+                    photo_points = int(photo.point) if photo.point.isdigit() else 0
+                    event_points = score_multiplier * photo_points
+                    
+                    current_points = int(user.point) if user.point and user.point.isdigit() else 0
+                    user.point = str(current_points + event_points)
+                    
                     print(f"Updated {user.emailUser} score by {event_points} points for event {event.eventCode}")
                     apply_penalty(user, event_points)
+            
 
-            db.session.commit()
+            db.session.flush()
+            
+
+        db.session.commit()
 
         print("Event ranking update and penalty calculation complete.")
 
