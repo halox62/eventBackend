@@ -1676,7 +1676,7 @@ def profile_page():
         .grid-item img {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Cambiato da contain a cover per riempire uniformemente */
+            object-fit: cover;
         }
 
         #imageModal {
@@ -1756,23 +1756,25 @@ def profile_page():
     </div>
 
     <!-- Modale immagine -->
-    <div id="imageModal" class="fixed inset-0 flex items-center justify-center z-50 hidden bg-black bg-opacity-90" onclick="closeModal()">
-        <img id="modalImage" src="" alt="Immagine ingrandita" class="max-h-[80vh] max-w-[80vw] rounded transition-transform duration-300" onclick="event.stopPropagation();">
+    <div id="imageModal" class="fixed inset-0 flex items-center justify-center z-50 hidden bg-black bg-opacity-90">
+        <img id="modalImage" src="" alt="Immagine ingrandita" class="max-h-[80vh] max-w-[80vw] rounded transition-transform duration-300">
     </div>
 
     <script>
-        function openModal(imageUrl) {
+        // Funzione per gestire l'apertura e chiusura della modale
+        function toggleModal(imageUrl = null) {
             const modal = document.getElementById('imageModal');
             const modalImage = document.getElementById('modalImage');
-            modal.classList.remove('hidden');
-            modalImage.src = imageUrl;
-        }
-        
-        function closeModal() {
-            const modal = document.getElementById('imageModal');
-            const modalImage = document.getElementById('modalImage');
-            modal.classList.add('hidden');
-            modalImage.src = '';
+            
+            if (modal.style.display === 'flex') {
+                // Chiudi modale
+                modal.style.display = 'none';
+                modalImage.src = '';
+            } else if (imageUrl) {
+                // Apri modale con l'immagine
+                modal.style.display = 'flex';
+                modalImage.src = imageUrl;
+            }
         }
 
         async function fetchProfileWithImages(email) {
@@ -1792,9 +1794,9 @@ def profile_page():
             const img = document.createElement('img');
             img.src = imageUrl;
             img.alt = 'Foto';
-            img.loading = 'lazy'; // Aggiunto lazy loading
+            img.loading = 'lazy';
             div.appendChild(img);
-            div.onclick = () => openModal(imageUrl);
+            div.onclick = () => toggleModal(imageUrl);
             return div;
         }
 
@@ -1830,6 +1832,18 @@ def profile_page():
             } finally {
                 loadingSpinner.classList.add('hidden');
             }
+
+            // Aggiungi event listener alla modale per chiuderla quando si clicca su di essa
+            const modal = document.getElementById('imageModal');
+            modal.addEventListener('click', function() {
+                toggleModal();
+            });
+
+            // Previeni che il click sull'immagine chiuda la modale
+            const modalImage = document.getElementById('modalImage');
+            modalImage.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
         }
 
         document.addEventListener('DOMContentLoaded', initialize);
