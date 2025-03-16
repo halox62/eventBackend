@@ -537,6 +537,8 @@ def register():
 def profile_with_images():
     email = request.args.get("email")
 
+    save=0
+
     if not email:
         return jsonify({"error": "Email not provided"}), 400
 
@@ -564,13 +566,15 @@ def profile_with_images():
                 "url": blob.public_url,
                 "saves": save_counts.get(file_id, 0)  
             }
+            save+=save_counts.get(file_id, 0) 
             images.append(image_info)
 
     return jsonify({
         "userName": user.userName,
         "profileImageUrl": user.profileImageUrl,
         "point": user.point,  
-        "images": images
+        "images": images,
+        "save":save
     }), 200
 
 
@@ -1753,7 +1757,13 @@ def profile_page():
                          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM6 12a6 6 0 1 1 12 0v1H6v-1z%22/></svg>'">
                 </div>
                 <div class="text-center sm:text-left">
-                    <h1 id="userName" class="text-2xl font-bold mb-2">Utente</h1>
+                    <h1 id="userName" class="text-2xl font-bold mb-1">Utente</h1>
+                    <div id="totalSaves" class="text-gray-600 text-sm mb-2 flex items-center justify-center sm:justify-start">
+                        <svg class="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <span>0 salvataggi</span>
+                    </div>
                     <div class="points-badge bg-green-600 text-white py-2 px-4 rounded-full font-semibold inline-block">
                         <span id="points">0 punti</span>
                     </div>
@@ -1852,6 +1862,7 @@ def profile_page():
             try {
                 const data = await fetchProfileWithImages(email);
                 document.getElementById('userName').textContent = data.userName || 'Utente sconosciuto';
+                document.getElementById('totalSaves').querySelector('span').textContent = `${data.save || 0} salvataggi`;
                 document.getElementById('points').textContent = `${data.point || 0} punti`;
 
                 const profileImage = document.getElementById('profileImage');
