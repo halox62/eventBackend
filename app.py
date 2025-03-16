@@ -535,32 +535,43 @@ def register():
 
 @app.route('/profileInformation', methods=['GET'])
 def profile_with_images():
-
     email = request.args.get("email")
 
     if not email:
         return jsonify({"error": "Email not provided"}), 400
 
-
     user = UserAccount.query.filter_by(emailUser=email).first()
     if user is None:
         return jsonify({"error": "User not found"}), 404
 
-
     images = []
-    blobs = bucket.list_blobs(prefix=f'images/{email}/')  
+    blobs = bucket.list_blobs(prefix=f'images/{email}/')
+
+
+    file_records = FileRecord.query.filter_by(emailUser=email).all()
+    file_records_dict = {record.file_url.split("/")[-1]: record.id for record in file_records}
+    saved_photos = FileSave.query.filter_by(emailUser=email).all()
+    save_counts = Counter([saved.idPhoto for saved in saved_photos])
 
     for blob in blobs:
-        blob.make_public() 
-        images.append(blob.public_url)
+        blob.make_public()
+        file_name = blob.name.split("/")[-1]
+        file_id = file_records_dict.get(file_name, None)
+        
+        if file_id is not None:
+            image_info = {
+                "id": file_id,
+                "url": blob.public_url,
+                "saves": save_counts.get(file_id, 0)  
+            }
+            images.append(image_info)
 
     return jsonify({
         "userName": user.userName,
         "profileImageUrl": user.profileImageUrl,
-        "point": user.point,
+        "point": user.point,  
         "images": images
     }), 200
-
 
 
 @app.route('/getImage', methods=['POST'])
@@ -1679,6 +1690,20 @@ def profile_page():
             object-fit: cover;
         }
 
+        .saves-overlay {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
         #imageModal {
             position: fixed;
             top: 0;
@@ -1788,15 +1813,28 @@ def profile_page():
             }
         }
 
-        function createImageElement(imageUrl) {
+        function createImageElement(image) {
             const div = document.createElement('div');
             div.className = 'grid-item';
+            
             const img = document.createElement('img');
-            img.src = imageUrl;
+            img.src = image.url;
             img.alt = 'Foto';
             img.loading = 'lazy';
             div.appendChild(img);
-            div.onclick = () => toggleModal(imageUrl);
+
+            // Aggiungi overlay con stella e numero di salvataggi
+            const savesOverlay = document.createElement('div');
+            savesOverlay.className = 'saves-overlay';
+            savesOverlay.innerHTML = `
+                <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+                <span>${image.saves}</span>
+            `;
+            div.appendChild(savesOverlay);
+
+            div.onclick = () => toggleModal(image.url);
             return div;
         }
 
@@ -1821,8 +1859,8 @@ def profile_page():
 
                 const imageGrid = document.getElementById('imageGrid');
                 if (data.images && data.images.length > 0) {
-                    data.images.forEach(imageUrl => {
-                        imageGrid.appendChild(createImageElement(imageUrl));
+                    data.images.forEach(image => {
+                        imageGrid.appendChild(createImageElement(image));
                     });
                 } else {
                     document.getElementById('emptyState').classList.remove('hidden');
