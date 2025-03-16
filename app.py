@@ -1652,8 +1652,8 @@ def profile_page():
 
         body {
             background-color: #fafafa;
-            display: block; /* Cambiato da flex a block */
-            padding: 20px 0; /* Spazio dal top */
+            display: block;
+            padding: 20px 0;
             min-height: 100vh;
         }
 
@@ -1665,21 +1665,18 @@ def profile_page():
 
         .grid-item {
             position: relative;
-            aspect-ratio: 1;
             border-radius: 8px;
             overflow: hidden;
             background-color: var(--surface-variant);
-            display: flex;
-            align-items: center;
-            justify-content: center;
             cursor: pointer;
-            transition: transform 0.3s ease; /* Animazione al clic */
+            transition: transform 0.3s ease;
+            aspect-ratio: 1;
         }
 
         .grid-item img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Cambiato da contain a cover per riempire uniformemente */
         }
 
         #imageModal {
@@ -1689,9 +1686,10 @@ def profile_page():
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.9);
-            display: none; /* Modale nascosta di default */
+            display: none;
             align-items: center;
             justify-content: center;
+            z-index: 50;
         }
 
         #imageModal img {
@@ -1712,30 +1710,26 @@ def profile_page():
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div class="main-container px-4">
+    <div class="main-container max-w-4xl mx-auto px-4">
         <!-- Profilo utente -->
         <div class="profile-card p-6 mb-6">
-            <div class="flex items-center space-x-6">
-                <div class="flex-shrink-0">
+            <div class="flex flex-col sm:flex-row items-center sm:space-x-6">
+                <div class="flex-shrink-0 mb-4 sm:mb-0">
                     <img id="profileImage" 
                          class="w-24 h-24 rounded-full object-cover shadow-md border-2 border-white"
                          src=""
                          alt="Immagine profilo"
                          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM6 12a6 6 0 1 1 12 0v1H6v-1z%22/></svg>'">
                 </div>
-                <div>
+                <div class="text-center sm:text-left">
                     <h1 id="userName" class="text-2xl font-bold mb-2">Utente</h1>
-                    <div class="points-badge bg-green-600 text-white py-2 px-4 rounded-full font-semibold">
+                    <div class="points-badge bg-green-600 text-white py-2 px-4 rounded-full font-semibold inline-block">
                         <span id="points">0 punti</span>
                     </div>
                 </div>
@@ -1748,8 +1742,8 @@ def profile_page():
             <p class="mt-3 text-gray-500">Caricamento...</p>
         </div>
 
-        <!-- Griglia immagini -->
-        <div id="imageGrid" class="grid grid-cols-4 gap-4"></div>
+        <!-- Griglia immagini - modificata per 3 colonne -->
+        <div id="imageGrid" class="grid grid-cols-3 gap-4"></div>
 
         <!-- Stato vuoto -->
         <div id="emptyState" class="hidden text-center mt-20">
@@ -1761,29 +1755,26 @@ def profile_page():
         </div>
     </div>
 
-        <!-- Modale immagine -->
-    <div id="imageModal" class="fixed inset-0 flex items-center justify-center z-50 hidden bg-black bg-opacity-90" onclick="toggleModal()">
+    <!-- Modale immagine -->
+    <div id="imageModal" class="fixed inset-0 flex items-center justify-center z-50 hidden bg-black bg-opacity-90" onclick="closeModal()">
         <img id="modalImage" src="" alt="Immagine ingrandita" class="max-h-[80vh] max-w-[80vw] rounded transition-transform duration-300" onclick="event.stopPropagation();">
     </div>
 
     <script>
-        function toggleModal(imageUrl = null) {
+        function openModal(imageUrl) {
             const modal = document.getElementById('imageModal');
             const modalImage = document.getElementById('modalImage');
-            
-            if (modal.classList.contains('hidden')) {
-                // Mostra la modale
-                modal.classList.remove('hidden');
-                modalImage.src = imageUrl;
-            } else {
-                // Nasconde la modale
-                modal.classList.add('hidden');
-                modalImage.src = ''; // Ripristina il contenuto
-            }
+            modal.classList.remove('hidden');
+            modalImage.src = imageUrl;
         }
-    </script>
+        
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            modal.classList.add('hidden');
+            modalImage.src = '';
+        }
 
-    <script>
         async function fetchProfileWithImages(email) {
             try {
                 const response = await fetch(`/profileInformation?email=${encodeURIComponent(email)}`, { method: 'GET' });
@@ -1801,21 +1792,10 @@ def profile_page():
             const img = document.createElement('img');
             img.src = imageUrl;
             img.alt = 'Foto';
-            img.onclick = () => toggleModal(imageUrl);
+            img.loading = 'lazy'; // Aggiunto lazy loading
             div.appendChild(img);
+            div.onclick = () => openModal(imageUrl);
             return div;
-        }
-
-        function toggleModal(imageUrl) {
-            const modal = document.getElementById('imageModal');
-            const modalImage = document.getElementById('modalImage');
-            if (modal.style.display === 'flex') {
-                modal.style.display = 'none';
-                modalImage.src = '';
-            } else {
-                modal.style.display = 'flex';
-                modalImage.src = imageUrl;
-            }
         }
 
         async function initialize() {
@@ -1852,7 +1832,7 @@ def profile_page():
             }
         }
 
-        initialize();
+        document.addEventListener('DOMContentLoaded', initialize);
     </script>
 </body>
 </html>
