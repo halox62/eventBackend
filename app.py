@@ -1663,6 +1663,7 @@ def profile_page():
         :root {
             --surface-variant: #f5f5f5;
             --primary-green: rgb(76, 175, 80);
+            --primary-blue: #1e88e5; /* Blu per i salvataggi */
         }
 
         body {
@@ -1729,6 +1730,24 @@ def profile_page():
             transition: transform 0.3s ease;
         }
 
+        .points-badge, .total-saves {
+            text-white;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 16px; /* Uniforma le dimensioni */
+            font-size: 16px; /* Dimensione del testo uniforme */
+            border-radius: 12px; /* Spigoli smussati */
+        }
+
+        .points-badge {
+            background-color: var(--primary-green);
+        }
+
+        .total-saves {
+            background-color: var(--primary-blue);
+        }
+
         .loading-spinner {
             border: 4px solid var(--surface-variant);
             border-top: 4px solid var(--primary-green);
@@ -1757,15 +1776,17 @@ def profile_page():
                          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM6 12a6 6 0 1 1 12 0v1H6v-1z%22/></svg>'">
                 </div>
                 <div class="text-center sm:text-left">
-                    <h1 id="userName" class="text-2xl font-bold mb-1">Utente</h1>
-                    <div id="totalSaves" class="text-gray-600 text-sm mb-2 flex items-center justify-center sm:justify-start">
-                        <svg class="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                        </svg>
-                        <span>0 salvataggi</span>
-                    </div>
-                    <div class="points-badge bg-green-600 text-white py-2 px-4 rounded-full font-semibold inline-block">
-                        <span id="points">0 punti</span>
+                    <h1 id="userName" class="text-2xl font-bold mb-2">Utente</h1>
+                    <div class="flex flex-col sm:flex-row items-center sm:space-x-4">
+                        <div class="points-badge">
+                            <span id="points">0 punti</span>
+                        </div>
+                        <div id="totalSaves" class="total-saves">
+                            <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                            <span>0 salvataggi</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1862,8 +1883,8 @@ def profile_page():
             try {
                 const data = await fetchProfileWithImages(email);
                 document.getElementById('userName').textContent = data.userName || 'Utente sconosciuto';
-                document.getElementById('totalSaves').querySelector('span').textContent = `${data.save || 0} salvataggi`;
                 document.getElementById('points').textContent = `${data.point || 0} punti`;
+                document.getElementById('totalSaves').querySelector('span').textContent = `${data.save || 0} salvataggi`;
 
                 const profileImage = document.getElementById('profileImage');
                 if (data.profileImageUrl) profileImage.src = data.profileImageUrl;
