@@ -126,12 +126,16 @@ def update_event_rankings():
     with app.app_context():
         events = Event.query.filter(
             or_(
-                Event.endDate > datetime.now().date(),
-                and_(
-                    Event.endDate == datetime.now().date(),
-                    Event.endTime >= datetime.now().time()
+                Event.end=="false",
+                or_(
+                    Event.endDate > datetime.now().date(),
+                    and_(
+                        Event.endDate == datetime.now().date(),
+                        Event.endTime >= datetime.now().time()
+                    )
                 )
             )
+            
         ).all()
         for event in events:
             print(f"Processing event: {event.eventCode}")
