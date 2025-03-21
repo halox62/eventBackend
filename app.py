@@ -2138,7 +2138,7 @@ def profile_page():
     <script>
         // Inizializza EmailJS con il tuo Public Key
         (function(){
-            emailjs.init("TUO_PUBLIC_KEY"); // Sostituisci con il tuo Public Key di EmailJS
+            emailjs.init("YfKiORIJrF1lXiJnc"); 
         })();
         
         document.getElementById('contactForm').addEventListener('submit', function(e) {
@@ -2160,7 +2160,7 @@ def profile_page():
             const templateParams = {
                 domanda: domanda,
                 from_email: email,
-                to_email: 'tua@email.com' // Sostituisci con la tua email
+                to_email: 'giorgiomartucci02@gmail.com' 
             };
             
             emailjs.send('TUO_SERVICE_ID', 'TUO_TEMPLATE_ID', templateParams)
