@@ -1929,6 +1929,272 @@ def profile_page():
     return render_template_string(html_template)
 
 
+@app.route('/assistance', methods=['GET'])
+def profile_page():
+    email = request.args.get('email')
+    if not email:
+        return jsonify({"msg": "Email mancante"}), 400
+
+    html_template = """"
+   <!DOCTYPE html>
+<html lang="it">
+<head>
+    <title>Form di Contatto</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --hover-color: #375785;
+            --bg-color: #f9f9fb;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --error-color: #e74c3c;
+            --success-color: #2ecc71;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-color);
+        }
+        
+        textarea, 
+        input[type="email"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        textarea:focus, 
+        input[type="email"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s, transform 0.1s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background-color: var(--hover-color);
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        #message {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: none;
+        }
+        
+        .success {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: var(--success-color);
+            display: block !important;
+        }
+        
+        .error {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--error-color);
+            display: block !important;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+            display: none;
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .required {
+            color: var(--error-color);
+        }
+        
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 576px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h2 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fas fa-paper-plane"></i> Invia la tua domanda</h2>
+        <form id="contactForm">
+            <div class="form-group">
+                <label for="domanda">La tua domanda <span class="required">*</span></label>
+                <textarea id="domanda" name="domanda" placeholder="Scrivi qui la tua domanda..." required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">La tua email <span class="required">*</span></label>
+                <input type="email" id="email" name="email" placeholder="esempio@email.com" required>
+            </div>
+            
+            <button type="submit">
+                <div class="loading-spinner" id="spinner"></div>
+                <span id="submitText">Invia messaggio</span>
+            </button>
+        </form>
+        <p id="message"></p>
+        <div class="footer">
+            Ti risponderemo al più presto al tuo indirizzo email.
+        </div>
+    </div>
+    
+    <script>
+        // Inizializza EmailJS con il tuo Public Key
+        (function(){
+            emailjs.init("TUO_PUBLIC_KEY"); // Sostituisci con il tuo Public Key di EmailJS
+        })();
+        
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Mostra spinner di caricamento
+            document.getElementById('spinner').style.display = 'inline-block';
+            document.getElementById('submitText').textContent = 'Invio in corso...';
+            
+            const domanda = document.getElementById('domanda').value;
+            const email = document.getElementById('email').value;
+            const messageElement = document.getElementById('message');
+            
+            // Disabilita il pulsante durante l'invio
+            const submitButton = document.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            
+            // Parametri per EmailJS
+            const templateParams = {
+                domanda: domanda,
+                from_email: email,
+                to_email: 'tua@email.com' // Sostituisci con la tua email
+            };
+            
+            emailjs.send('TUO_SERVICE_ID', 'TUO_TEMPLATE_ID', templateParams)
+                .then(function(response) {
+                    messageElement.classList.add('success');
+                    messageElement.classList.remove('error');
+                    messageElement.innerHTML = '<i class="fas fa-check-circle"></i> Domanda inviata con successo!';
+                    document.getElementById('contactForm').reset();
+                    
+                    // Nascondi il messaggio dopo 5 secondi
+                    setTimeout(() => {
+                        messageElement.style.display = 'none';
+                        messageElement.classList.remove('success');
+                    }, 5000);
+                }, function(error) {
+                    messageElement.classList.add('error');
+                    messageElement.classList.remove('success');
+                    messageElement.innerHTML = '<i class="fas fa-exclamation-circle"></i> Errore nell\'invio. Riprova più tardi.';
+                    console.error('Errore dettagliato:', JSON.stringify(error));
+                })
+                .finally(function() {
+                    // Ripristina lo stato del pulsante
+                    document.getElementById('spinner').style.display = 'none';
+                    document.getElementById('submitText').textContent = 'Invia messaggio';
+                    submitButton.disabled = false;
+                });
+        });
+    </script>
+</body>
+</html>
+    """
+    return render_template_string(html_template)
+
+
 @app.route('/infoPhoto', methods=['GET'])
 @firebase_required
 def get_photo_info():
