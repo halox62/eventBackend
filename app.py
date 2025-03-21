@@ -1931,8 +1931,8 @@ def profile_page():
 
 @app.route('/assistance', methods=['GET'])
 def assistance():
-    html_template = """"
-   <!DOCTYPE html>
+    html_template = """
+<!DOCTYPE html>
 <html lang="it">
 <head>
     <title>Form di Contatto</title>
@@ -2142,7 +2142,7 @@ def assistance():
             
             // Mostra spinner di caricamento
             document.getElementById('spinner').style.display = 'inline-block';
-            document.getElementById('submitText').textContent = 'Invio in corso...';
+            document.getElementById('submitText').textContent = "Invio in corso...";
             
             const domanda = document.getElementById('domanda').value;
             const email = document.getElementById('email').value;
@@ -2167,14 +2167,14 @@ def assistance():
                     document.getElementById('contactForm').reset();
                     
                     // Nascondi il messaggio dopo 5 secondi
-                    setTimeout(() => {
+                    setTimeout(function() {
                         messageElement.style.display = 'none';
                         messageElement.classList.remove('success');
                     }, 5000);
                 }, function(error) {
                     messageElement.classList.add('error');
                     messageElement.classList.remove('success');
-                    messageElement.innerHTML = '<i class="fas fa-exclamation-circle"></i> Errore nell\'invio. Riprova più tardi.';
+                    messageElement.innerHTML = '<i class="fas fa-exclamation-circle"></i> Errore nell\\'invio. Riprova più tardi.';
                     console.error('Errore dettagliato:', JSON.stringify(error));
                 })
                 .finally(function() {
@@ -2187,7 +2187,7 @@ def assistance():
     </script>
 </body>
 </html>
-    """
+"""
     return render_template_string(html_template)
 
 
