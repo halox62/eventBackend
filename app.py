@@ -2159,7 +2159,7 @@ def assistance():
                 to_email: 'giorgiomartucci02@gmail.com' 
             };
             
-            emailjs.send('TUO_SERVICE_ID', 'TUO_TEMPLATE_ID', templateParams)
+            emailjs.send('service_vwhqm7l', 'template_bf1zgou', templateParams)
                 .then(function(response) {
                     messageElement.classList.add('success');
                     messageElement.classList.remove('error');
