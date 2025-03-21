@@ -1930,11 +1930,7 @@ def profile_page():
 
 
 @app.route('/assistance', methods=['GET'])
-def profile_page():
-    email = request.args.get('email')
-    if not email:
-        return jsonify({"msg": "Email mancante"}), 400
-
+def assistance():
     html_template = """"
    <!DOCTYPE html>
 <html lang="it">
