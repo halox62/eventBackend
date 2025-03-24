@@ -427,6 +427,90 @@ scheduler.start()
 def healthcheck():
     return 'OK', 200
 
+def delete_physical_file(file_url):
+    try:
+        if os.path.exists(file_url):
+            os.remove(file_url)
+    except Exception as e:
+        print(f"Error deleting file: {e}")
+
+def delete_firebase_user(user_email):
+    try:
+        user = auth.get_user_by_email(user_email)
+        auth.delete_user(user.uid)
+        print(f"Firebase user {user_email} deleted successfully")
+    except Exception as e:
+        print(f"Error deleting Firebase user: {e}")
+
+def delete_firebase_storage_files(email):
+    try:
+        bucket = storage.bucket()
+        blobs = bucket.list_blobs(prefix=f"users/{email}/")
+        for blob in blobs:
+            blob.delete()
+        print(f"Firebase storage files for {email} deleted")
+    except Exception as e:
+        print(f"Error deleting Firebase storage files: {e}")
+
+@app.route('/delete_account', methods=['DELETE'])
+@firebase_required
+def delete_account():
+    try:
+        
+        email = request.user.get("email")
+
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+
+        user = UserAccount.query.filter_by(emailUser=email).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+   
+        file_records = FileRecord.query.filter_by(emailUser=email).all()
+        for record in file_records:
+            delete_physical_file(record.file_url)
+            db.session.delete(record)
+        
+
+        FileSave.query.filter_by(emailUser=email).delete()
+
+        LikePhoto.query.filter_by(emailUser=email).delete()
+        
+
+        Event.query.filter_by(emailUser=email).delete()
+
+        info_records = db.session.query(info).join(FileRecord).filter(FileRecord.emailUser == email).all()
+        for record in info_records:
+            db.session.delete(record)
+        
+
+        EventSubscibe.query.filter_by(emailUser=email).delete()
+        
+
+        db.session.delete(user)
+        
+  
+        delete_firebase_user(email)
+        
+    
+        delete_firebase_storage_files(email)
+        
+
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Account, associated data, and Firebase data deleted successfully'
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'error': 'An error occurred while deleting the account',
+            'details': str(e)
+        }), 500
+
 
 @app.route('/upload', methods=['POST'])
 @firebase_required
