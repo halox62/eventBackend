@@ -517,8 +517,6 @@ def delete_account():
             
             # Elimina file fisici e record correlati
             for record in file_records:
-                # Elimina file fisico
-                delete_physical_file(record.file_url)
                 
                 # Elimina record correlati a questo file
                 info_records = info.query.filter_by(file_id=record.id).all()
@@ -570,7 +568,7 @@ def delete_account():
             'details': str(e)
         }), 500
     
-    
+
 @app.route('/upload', methods=['POST'])
 @firebase_required
 def upload_image():
