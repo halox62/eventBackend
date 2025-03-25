@@ -509,7 +509,7 @@ def delete_account():
             # Elimina i like photo associati ai file dell'utente
             file_ids = [record.id for record in FileRecord.query.filter_by(emailUser=authenticated_email).all()]
             if file_ids:
-                LikePhoto.query.filter(LikePhoto.idPhoto.in_(file_ids)).delete(synchronize_session=False)
+                LikePhoto.query.filter(LikePhoto.file_id.in_(file_ids)).delete(synchronize_session=False)
             
             # Elimina i record info associati ai file dell'utente
             info.query.filter(info.idPhoto.in_(file_ids)).delete(synchronize_session=False)
