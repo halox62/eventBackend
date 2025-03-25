@@ -431,27 +431,40 @@ def delete_firebase_storage_files(email):
     try:
         bucket = storage.bucket()
         
-        # Crea il prefisso della cartella dell'utente
-        user_folder_prefix = f"images/{email}/"
+        # Elimina la cartella dell'utente
+        user_folder_prefix = f"users/{email}/"
         
         # Ottieni tutti i blob nella cartella dell'utente
-        blobs = bucket.list_blobs(prefix=user_folder_prefix)
+        user_blobs = bucket.list_blobs(prefix=user_folder_prefix)
         
-        # Conta i file eliminati
-        files_deleted = 0
-        
-        # Elimina tutti i file nella cartella
-        for blob in blobs:
+        # Elimina tutti i file nella cartella dell'utente
+        for blob in user_blobs:
             try:
                 blob.delete()
-                files_deleted += 1
-                logging.info(f"File eliminato da Firebase Storage: {blob.name}")
+                logging.info(f"File eliminato dalla cartella utente: {blob.name}")
             except Exception as e:
                 logging.error(f"Errore durante l'eliminazione del file {blob.name}: {e}")
         
-        # Verifica se la cartella è stata completamente eliminata
-        remaining_blobs = list(bucket.list_blobs(prefix=user_folder_prefix))
-        if not remaining_blobs:
+
+        try:
+            user = UserAccount.query.filter_by(emailUser=email).first()
+            
+            if user and user.profileImage:
+                profile_image_name = os.path.basename(user.profileImageUrl)
+                profile_image_path = f"profile/{profile_image_name}"
+                
+                profile_blob = bucket.blob(profile_image_path)
+                
+                if profile_blob.exists():
+                    profile_blob.delete()
+                    logging.info(f"Immagine di profilo eliminata: {profile_image_path}")
+        except Exception as e:
+            logging.error(f"Errore durante l'eliminazione dell'immagine di profilo: {e}")
+        
+
+
+        remaining_user_blobs = list(bucket.list_blobs(prefix=user_folder_prefix))
+        if not remaining_user_blobs:
             logging.info(f"Cartella utente completamente eliminata: {user_folder_prefix}")
             return True
         else:
@@ -459,19 +472,9 @@ def delete_firebase_storage_files(email):
             return False
     
     except Exception as e:
-        logging.error(f"Errore durante l'eliminazione della cartella storage per {email}: {e}")
+        logging.error(f"Errore durante l'eliminazione dei file storage per {email}: {e}")
         return False
-    
 def delete_firebase_user(user_email):
-    """
-    Elimina un utente da Firebase Authentication.
-    
-    Args:
-        user_email (str): Email dell'utente da eliminare
-    
-    Returns:
-        bool: True se l'eliminazione è riuscita, False altrimenti
-    """
     try:
         user = auth.get_user_by_email(user_email)
         auth.delete_user(user.uid)
