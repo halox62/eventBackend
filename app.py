@@ -491,8 +491,6 @@ def delete_account():
         request_data = request.get_json()
         submitted_email = request_data.get('email', '').strip()
 
-        print(submitted_email)
-
         # Verifica che l'email corrisponda
         if not submitted_email or submitted_email != authenticated_email:
             logging.warning(f"Mancata corrispondenza email: {submitted_email} vs {authenticated_email}")
@@ -507,30 +505,27 @@ def delete_account():
 
         # Inizia una transazione
         with db.session.begin_nested():
-            # Recupera tutti i record dei file prima di eliminarli
-            file_records = FileRecord.query.filter_by(emailUser=authenticated_email).all()
             
-            # Elimina file fisici e record correlati
-            for record in file_records:
-                
-                # Elimina record correlati a questo file
-                info_records = info.query.filter_by(idPhoto=record.id).all()
-                for info_record in info_records:
-                    db.session.delete(info_record)
-                
-                # Elimina il record del file
-                db.session.delete(record)
-
+            # Elimina i like photo associati ai file dell'utente
+            file_ids = [record.id for record in FileRecord.query.filter_by(emailUser=authenticated_email).all()]
+            if file_ids:
+                LikePhoto.query.filter(LikePhoto.fileId.in_(file_ids)).delete(synchronize_session=False)
+            
+            # Elimina i record info associati ai file dell'utente
+            info.query.filter(info.idPhoto.in_(file_ids)).delete(synchronize_session=False)
+            
             # Elimina altri record correlati
             models_to_delete = [
                 FileSave,
-                LikePhoto,
                 Event,
                 EventSubscibe
             ]
             
             for model in models_to_delete:
-                model.query.filter_by(emailUser=authenticated_email).delete()
+                model.query.filter_by(emailUser=authenticated_email).delete(synchronize_session=False)
+            
+            # Elimina i file record dell'utente
+            FileRecord.query.filter_by(emailUser=authenticated_email).delete(synchronize_session=False)
 
             # Elimina l'utente
             db.session.delete(user)
@@ -562,7 +557,6 @@ def delete_account():
             'error': 'Si è verificato un errore durante l\'eliminazione dell\'account',
             'details': str(e)
         }), 500
-    
 
 @app.route('/upload', methods=['POST'])
 @firebase_required
