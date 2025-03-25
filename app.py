@@ -479,13 +479,6 @@ def delete_firebase_user(user_email):
 @app.route('/delete_account', methods=['POST'])
 @firebase_required
 def delete_account():
-    """
-    Endpoint per l'eliminazione completa dell'account.
-    Richiede la conferma dell'email dell'utente.
-    
-    Returns:
-        JSON response con risultato dell'operazione
-    """
     try:
         # Email dall'utente autenticato
         authenticated_email = request.user.get("email")
@@ -521,7 +514,7 @@ def delete_account():
             for record in file_records:
                 
                 # Elimina record correlati a questo file
-                info_records = info.query.filter_by(file_id=record.id).all()
+                info_records = info.query.filter_by(idPhoto=record.id).all()
                 for info_record in info_records:
                     db.session.delete(info_record)
                 
