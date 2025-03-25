@@ -476,36 +476,50 @@ def delete_firebase_user(user_email):
         return False
     
 
-@app.route('/delete_account', methods=['DELETE'])
+@app.route('/delete_account', methods=['POST'])
 @firebase_required
 def delete_account():
     """
     Endpoint per l'eliminazione completa dell'account.
+    Richiede la conferma dell'email dell'utente.
     
     Returns:
         JSON response con risultato dell'operazione
     """
     try:
-        email = request.user.get("email")
+        # Email dall'utente autenticato
+        authenticated_email = request.user.get("email")
 
-        if not email:
-            logging.warning("Tentativo di eliminazione account senza email")
-            return jsonify({'error': 'Email è richiesta'}), 400
+        if not authenticated_email:
+            logging.warning("Tentativo di eliminazione account senza email autenticata")
+            return jsonify({'error': 'Email autenticata non trovata'}), 400
+
+        # Recupera l'email inviata nella richiesta
+        request_data = request.get_json()
+        submitted_email = request_data.get('email', '').strip()
+
+        # Verifica che l'email corrisponda
+        if not submitted_email or submitted_email != authenticated_email:
+            logging.warning(f"Mancata corrispondenza email: {submitted_email} vs {authenticated_email}")
+            return jsonify({'error': 'Email non corrispondente'}), 403
 
         # Trova l'utente
-        user = UserAccount.query.filter_by(emailUser=email).first()
+        user = UserAccount.query.filter_by(emailUser=authenticated_email).first()
         
         if not user:
-            logging.warning(f"Utente non trovato: {email}")
+            logging.warning(f"Utente non trovato: {authenticated_email}")
             return jsonify({'error': 'Utente non trovato'}), 404
 
         # Inizia una transazione
         with db.session.begin_nested():
             # Recupera tutti i record dei file prima di eliminarli
-            file_records = FileRecord.query.filter_by(emailUser=email).all()
+            file_records = FileRecord.query.filter_by(emailUser=authenticated_email).all()
             
             # Elimina file fisici e record correlati
             for record in file_records:
+                # Elimina file fisico
+                delete_physical_file(record.file_url)
+                
                 # Elimina record correlati a questo file
                 info_records = info.query.filter_by(file_id=record.id).all()
                 for info_record in info_records:
@@ -523,7 +537,7 @@ def delete_account():
             ]
             
             for model in models_to_delete:
-                model.query.filter_by(emailUser=email).delete()
+                model.query.filter_by(emailUser=authenticated_email).delete()
 
             # Elimina l'utente
             db.session.delete(user)
@@ -532,15 +546,15 @@ def delete_account():
             db.session.commit()
 
         # Operazioni esterne al database
-        firebase_user_deleted = delete_firebase_user(email)
-        firebase_files_deleted = delete_firebase_storage_files(email)
+        firebase_user_deleted = delete_firebase_user(authenticated_email)
+        firebase_files_deleted = delete_firebase_storage_files(authenticated_email)
 
         # Log degli esiti
         if not firebase_user_deleted:
-            logging.warning(f"Impossibile eliminare l'utente Firebase: {email}")
+            logging.warning(f"Impossibile eliminare l'utente Firebase: {authenticated_email}")
         
         if not firebase_files_deleted:
-            logging.warning(f"Impossibile eliminare i file storage per: {email}")
+            logging.warning(f"Impossibile eliminare i file storage per: {authenticated_email}")
 
         return jsonify({
             'message': 'Account, dati associati ed elementi Firebase eliminati con successo',
@@ -548,7 +562,6 @@ def delete_account():
             'firebase_files_deleted': firebase_files_deleted
         }), 200
 
-    
     except Exception as e:
         db.session.rollback()
         logging.error(f"Errore generico durante l'eliminazione dell'account: {e}")
@@ -556,7 +569,8 @@ def delete_account():
             'error': 'Si è verificato un errore durante l\'eliminazione dell\'account',
             'details': str(e)
         }), 500
-
+    
+    
 @app.route('/upload', methods=['POST'])
 @firebase_required
 def upload_image():
