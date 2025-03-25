@@ -498,6 +498,8 @@ def delete_account():
         request_data = request.get_json()
         submitted_email = request_data.get('email', '').strip()
 
+        print(submitted_email)
+
         # Verifica che l'email corrisponda
         if not submitted_email or submitted_email != authenticated_email:
             logging.warning(f"Mancata corrispondenza email: {submitted_email} vs {authenticated_email}")
