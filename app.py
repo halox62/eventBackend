@@ -431,26 +431,35 @@ def delete_firebase_storage_files(email):
     try:
         bucket = storage.bucket()
         
-        # Trova tutti i file nell'utente
-        file_records = FileRecord.query.filter_by(emailUser=email).all()
+        # Crea il prefisso della cartella dell'utente
+        user_folder_prefix = f"images/{email}/"
         
-        for file_record in file_records:
-            # Estrai il nome del file dal percorso completo
-            file_name = f"users/{email}/{os.path.basename(file_record.file_url)}"
-            
-            # Crea un blob per il file
-            blob = bucket.blob(file_name)
-            
-            # Elimina il file se esiste
-            if blob.exists():
+        # Ottieni tutti i blob nella cartella dell'utente
+        blobs = bucket.list_blobs(prefix=user_folder_prefix)
+        
+        # Conta i file eliminati
+        files_deleted = 0
+        
+        # Elimina tutti i file nella cartella
+        for blob in blobs:
+            try:
                 blob.delete()
-                logging.info(f"File eliminato da Firebase Storage: {file_name}")
+                files_deleted += 1
+                logging.info(f"File eliminato da Firebase Storage: {blob.name}")
+            except Exception as e:
+                logging.error(f"Errore durante l'eliminazione del file {blob.name}: {e}")
         
-        logging.info(f"Eliminazione file storage completata per {email}")
-        return True
+        # Verifica se la cartella è stata completamente eliminata
+        remaining_blobs = list(bucket.list_blobs(prefix=user_folder_prefix))
+        if not remaining_blobs:
+            logging.info(f"Cartella utente completamente eliminata: {user_folder_prefix}")
+            return True
+        else:
+            logging.warning(f"Alcuni file nella cartella {user_folder_prefix} non sono stati eliminati")
+            return False
     
     except Exception as e:
-        logging.error(f"Errore durante l'eliminazione dei file storage: {e}")
+        logging.error(f"Errore durante l'eliminazione della cartella storage per {email}: {e}")
         return False
     
 def delete_firebase_user(user_email):
