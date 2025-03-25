@@ -445,24 +445,27 @@ def delete_firebase_storage_files(email):
             except Exception as e:
                 logging.error(f"Errore durante l'eliminazione del file {blob.name}: {e}")
         
-
-        try:
+        try:         
             user = UserAccount.query.filter_by(emailUser=email).first()
             
             if user and user.profileImage:
-                profile_image_name = os.path.basename(user.profileImageUrl)
-                profile_image_path = f"profile/{profile_image_name}"
+        
+                profile_image_url = user.profileImage
                 
+               
+                base_url = "https://storage.googleapis.com/outfitsocial-a6124.appspot.com/"
+                profile_image_path = profile_image_url.replace(base_url, '')
+                
+
                 profile_blob = bucket.blob(profile_image_path)
                 
+     
                 if profile_blob.exists():
                     profile_blob.delete()
                     logging.info(f"Immagine di profilo eliminata: {profile_image_path}")
         except Exception as e:
             logging.error(f"Errore durante l'eliminazione dell'immagine di profilo: {e}")
         
-
-
         remaining_user_blobs = list(bucket.list_blobs(prefix=user_folder_prefix))
         if not remaining_user_blobs:
             logging.info(f"Cartella utente completamente eliminata: {user_folder_prefix}")
@@ -474,6 +477,7 @@ def delete_firebase_storage_files(email):
     except Exception as e:
         logging.error(f"Errore durante l'eliminazione dei file storage per {email}: {e}")
         return False
+
 def delete_firebase_user(user_email):
     try:
         user = auth.get_user_by_email(user_email)
