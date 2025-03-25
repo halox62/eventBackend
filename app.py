@@ -427,56 +427,6 @@ scheduler.start()
 def healthcheck():
     return 'OK', 200
 
-def delete_firebase_storage_files(email):
-    try:
-        bucket = storage.bucket()
-        
-        # Elimina la cartella dell'utente
-        user_folder_prefix = f"users/{email}/"
-        
-        # Ottieni tutti i blob nella cartella dell'utente
-        user_blobs = bucket.list_blobs(prefix=user_folder_prefix)
-        
-        # Elimina tutti i file nella cartella dell'utente
-        for blob in user_blobs:
-            try:
-                blob.delete()
-                logging.info(f"File eliminato dalla cartella utente: {blob.name}")
-            except Exception as e:
-                logging.error(f"Errore durante l'eliminazione del file {blob.name}: {e}")
-        
-        try:         
-            user = UserAccount.query.filter_by(emailUser=email).first()
-            
-            if user and user.profileImage:
-        
-                profile_image_url = user.profileImage
-                
-               
-                base_url = "https://storage.googleapis.com/outfitsocial-a6124.appspot.com/"
-                profile_image_path = profile_image_url.replace(base_url, '')
-                
-
-                profile_blob = bucket.blob(profile_image_path)
-                
-     
-                if profile_blob.exists():
-                    profile_blob.delete()
-                    logging.info(f"Immagine di profilo eliminata: {profile_image_path}")
-        except Exception as e:
-            logging.error(f"Errore durante l'eliminazione dell'immagine di profilo: {e}")
-        
-        remaining_user_blobs = list(bucket.list_blobs(prefix=user_folder_prefix))
-        if not remaining_user_blobs:
-            logging.info(f"Cartella utente completamente eliminata: {user_folder_prefix}")
-            return True
-        else:
-            logging.warning(f"Alcuni file nella cartella {user_folder_prefix} non sono stati eliminati")
-            return False
-    
-    except Exception as e:
-        logging.error(f"Errore durante l'eliminazione dei file storage per {email}: {e}")
-        return False
 
 def delete_firebase_user(user_email):
     try:
@@ -512,18 +462,28 @@ def delete_account():
             logging.warning(f"Mancata corrispondenza email: {submitted_email} vs {authenticated_email}")
             return jsonify({'error': 'Email non corrispondente'}), 403
 
-        # Trova l'utente
+        # Trova l'utente e recupera le informazioni necessarie prima di eliminare
         user = UserAccount.query.filter_by(emailUser=authenticated_email).first()
         
         if not user:
             logging.warning(f"Utente non trovato: {authenticated_email}")
             return jsonify({'error': 'Utente non trovato'}), 404
 
-        # Inizia una transazione
+        # Recupera informazioni necessarie prima di eliminare dal database
+        profile_image_url = user.profileImage
+        file_records = FileRecord.query.filter_by(emailUser=authenticated_email).all()
+        file_ids = [record.id for record in file_records]
+
+        # Operazioni esterne al database (prima di eliminare dal database)
+        # Elimina i file di storage di Firebase
+        firebase_files_deleted = delete_firebase_storage_files(authenticated_email, profile_image_url, file_records)
+        
+        # Elimina l'utente Firebase
+        firebase_user_deleted = delete_firebase_user(authenticated_email)
+
+        # Inizia una transazione per eliminare dal database
         with db.session.begin_nested():
-            
             # Elimina i like photo associati ai file dell'utente
-            file_ids = [record.id for record in FileRecord.query.filter_by(emailUser=authenticated_email).all()]
             if file_ids:
                 LikePhoto.query.filter(LikePhoto.file_id.in_(file_ids)).delete(synchronize_session=False)
             
@@ -549,10 +509,6 @@ def delete_account():
             # Commit delle modifiche al database
             db.session.commit()
 
-        # Operazioni esterne al database
-        firebase_user_deleted = delete_firebase_user(authenticated_email)
-        firebase_files_deleted = delete_firebase_storage_files(authenticated_email)
-
         # Log degli esiti
         if not firebase_user_deleted:
             logging.warning(f"Impossibile eliminare l'utente Firebase: {authenticated_email}")
@@ -565,6 +521,59 @@ def delete_account():
             'firebase_user_deleted': firebase_user_deleted,
             'firebase_files_deleted': firebase_files_deleted
         }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Errore generico durante l'eliminazione dell'account: {e}")
+        return jsonify({
+            'error': 'Si è verificato un errore durante l\'eliminazione dell\'account',
+            'details': str(e)
+        }), 500
+
+def delete_firebase_storage_files(email, profile_image_url=None, file_records=None):
+    try:
+        bucket = storage.bucket()
+        
+        # Elimina la cartella dell'utente
+        user_folder_prefix = f"users/{email}/"
+        
+        # Ottieni tutti i blob nella cartella dell'utente
+        user_blobs = bucket.list_blobs(prefix=user_folder_prefix)
+        
+        # Elimina tutti i file nella cartella dell'utente
+        for blob in user_blobs:
+            try:
+                blob.delete()
+                logging.info(f"File eliminato dalla cartella utente: {blob.name}")
+            except Exception as e:
+                logging.error(f"Errore durante l'eliminazione del file {blob.name}: {e}")
+        
+        # Elimina l'immagine di profilo se presente
+        if profile_image_url:
+            try:
+                base_url = "https://storage.googleapis.com/outfitsocial-a6124.appspot.com/"
+                profile_image_path = profile_image_url.replace(base_url, '')
+                
+                profile_blob = bucket.blob(profile_image_path)
+                
+                if profile_blob.exists():
+                    profile_blob.delete()
+                    logging.info(f"Immagine di profilo eliminata: {profile_image_path}")
+            except Exception as e:
+                logging.error(f"Errore durante l'eliminazione dell'immagine di profilo: {e}")
+        
+        # Verifica finale
+        remaining_user_blobs = list(bucket.list_blobs(prefix=user_folder_prefix))
+        if not remaining_user_blobs:
+            logging.info(f"Cartella utente completamente eliminata: {user_folder_prefix}")
+            return True
+        else:
+            logging.warning(f"Alcuni file nella cartella {user_folder_prefix} non sono stati eliminati")
+            return False
+    
+    except Exception as e:
+        logging.error(f"Errore durante l'eliminazione dei file storage per {email}: {e}")
+        return False
 
     except Exception as e:
         db.session.rollback()
