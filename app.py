@@ -470,7 +470,7 @@ def delete_account():
             return jsonify({'error': 'Utente non trovato'}), 404
 
         # Recupera informazioni necessarie prima di eliminare dal database
-        profile_image_url = user.profileImage
+        profile_image_url = user.profileImageUrl
         file_records = FileRecord.query.filter_by(emailUser=authenticated_email).all()
         file_ids = [record.id for record in file_records]
 
