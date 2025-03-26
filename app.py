@@ -125,17 +125,14 @@ def firebase_required(f):
 def update_event_rankings():
     with app.app_context():
         events = Event.query.filter(
-            and_(
-                Event.end=="false",
-                or_(
-                    Event.endDate > datetime.now().date(),
-                    and_(
-                        Event.endDate == datetime.now().date(),
-                        Event.endTime >= datetime.now().time()
-                    )
+            Event.end == "false",
+            or_(
+                Event.endDate > datetime.now().date(),
+                and_(
+                    Event.endDate == datetime.now().date(),
+                    Event.endTime >= datetime.now().time()
                 )
             )
-            
         ).all()
         for event in events:
             print(f"Processing event: {event.eventCode}")
@@ -173,7 +170,7 @@ def apply_penalty(user, event_points):
     if event_points < min_required_points:
         penalty_points = int((min_required_points - event_points) * 0.5)  # Penalità del 50% dei punti mancanti
         user.point -= penalty_points
-        print(f"Applied penalty of {penalty_points} to {user.emailUser} due to low event performance.")
+        print(f"Applied penalty of {penalty_points} to {user.emailUser}.")
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(update_event_rankings, 'cron', hour=0, minute=0)
