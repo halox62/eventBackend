@@ -32,6 +32,7 @@ from werkzeug.utils import secure_filename
 import mimetypes
 from collections import Counter
 from better_profanity import profanity
+from datetime import time
 
 # Endpoint per caricare l'immagine
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -853,21 +854,32 @@ def createEvent():
             }), 400
 
         try:
-            # Parse and validate dates and time
+            # Parse and validate dates
             event_date = datetime.strptime(required_fields['eventDate'], '%Y-%m-%d').date()
             event_time = datetime.strptime(required_fields['eventTime'], '%H:%M').time()
             end_date = datetime.strptime(required_fields['endDate'], '%Y-%m-%d').date()
-            end_time = datetime.strptime(required_fields['endTime'], '%H:%M').time()
+            
+            # Parse end time using custom approach
+            time_str = required_fields.get('endTime', '')
+            try:
+                # For format like "14:30" or "14:30:00"
+                hour, minute, *rest = (time_str.split(':') + ['0'])[:3]
+                second = rest[0] if rest else '0'
+                end_time = time(int(hour), int(minute), int(second))
+            except ValueError:
+                # Handle invalid time format
+                # Either set a default time or raise an error
+                end_time = time(0, 0, 0)  # Default to midnight
             
             # Create full datetime objects for comparison
             event_datetime = datetime.combine(event_date, event_time)
             end_datetime = datetime.combine(end_date, end_time)
-            
+
             if event_datetime >= end_datetime:
                 return jsonify({
                     "error": "Event end time must be after start time"
                 }), 400
-
+            
             # Validate coordinates
             lat = float(required_fields['latitudine'])
             lon = float(required_fields['longitude'])
@@ -888,10 +900,6 @@ def createEvent():
             return jsonify({
                 "error": f"Invalid data format: {str(ve)}"
             }), 400
-        
-        print(event_date)
-        print(end_time)
-        print(end_date)
 
         # Create new event
         new_event = Event(
@@ -917,7 +925,7 @@ def createEvent():
         }), 201
 
     except Exception as e:
-        db.session.rollback()  # Rollback in case of error
+        db.session.rollback()  
         app.logger.error(f"Error creating event: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
