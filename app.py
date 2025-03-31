@@ -910,7 +910,7 @@ def createEvent():
                 "error": f"Invalid data format: {str(ve)}"
             }), 400
         
-        print(end_date)
+        print(end_time)
 
         # Create new event
         new_event = Event(
