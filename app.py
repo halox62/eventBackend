@@ -888,6 +888,10 @@ def createEvent():
             return jsonify({
                 "error": f"Invalid data format: {str(ve)}"
             }), 400
+        
+        print(event_date)
+        print(end_time)
+        print(end_date)
 
         # Create new event
         new_event = Event(
