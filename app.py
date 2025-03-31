@@ -833,7 +833,7 @@ def get_ImageS():
 @firebase_required
 def createEvent():
     try:
-        # Raccolta dei campi obbligatori dalla richiesta
+        
         required_fields = {
             'email': request.user.get("email"),
             'eventName': request.form.get('eventName'),
@@ -847,41 +847,38 @@ def createEvent():
             'create': request.form.get('create')
         }
 
-        # Log dei dati ricevuti
-        app.logger.debug(f"Received fields: {required_fields}")
+        
+        print(required_fields)
 
-        # Controllo campi mancanti
+       
         missing_fields = [field for field, value in required_fields.items() if not value or value.strip() == '']
         if missing_fields:
             return jsonify({
                 "error": f"Missing required fields: {', '.join(missing_fields)}"
             }), 400
 
-        # Parsing e validazione delle date e degli orari
+       
         try:
-            # Parsing delle date
+            
             event_date = datetime.strptime(required_fields['eventDate'], '%Y-%m-%d').date()
             end_date = datetime.strptime(required_fields['endDate'], '%Y-%m-%d').date()
 
-            # Parsing degli orari
+          
             event_time = datetime.strptime(required_fields['eventTime'], '%H:%M').time()
             end_time_str = required_fields['endTime'].strip()
             end_time = datetime.strptime(end_time_str, '%H:%M').time()
 
-            # Creazione degli oggetti datetime per il confronto
+            
             event_datetime = datetime.combine(event_date, event_time)
             end_datetime = datetime.combine(end_date, end_time)
 
-            # Validazione temporale
+            
             if event_datetime >= end_datetime:
                 return jsonify({
                     "error": "Event end time must be after start time"
                 }), 400
 
-            # Log dei valori parsati
-            app.logger.debug(f"Parsed event_datetime: {event_datetime}")
-            app.logger.debug(f"Parsed end_datetime: {end_datetime}")
-            app.logger.debug(f"Parsed end_time: {end_time}")
+        
 
         except ValueError as ve:
             app.logger.error(f"Parsing error: {str(ve)}")
@@ -889,7 +886,7 @@ def createEvent():
                 "error": f"Invalid date or time format: {str(ve)}. Use YYYY-MM-DD for dates and HH:MM for times."
             }), 400
 
-        # Validazione delle coordinate
+       
         try:
             lat = float(required_fields['latitudine'])
             lon = float(required_fields['longitude'])
@@ -902,14 +899,14 @@ def createEvent():
                 "error": "Latitude and longitude must be valid numbers"
             }), 400
 
-        # Controllo unicità dell'eventCode
+       
         existing_event = Event.query.filter_by(eventCode=required_fields['eventCode']).first()
         if existing_event:
             return jsonify({
                 "error": "Event code already exists"
             }), 400
 
-        # Creazione del nuovo evento
+       
         new_event = Event(
             eventName=required_fields['eventName'],
             emailUser=required_fields['email'],
@@ -923,12 +920,12 @@ def createEvent():
             end="false"
         )
 
-        # Salvataggio nel database
+       
         db.session.add(new_event)
         db.session.commit()
 
-        # Log del successo
-        app.logger.debug(f"Event created with endTime: {new_event.endTime}")
+       
+        print(new_event.endTime)
 
         return jsonify({
             "message": "Event created successfully",
