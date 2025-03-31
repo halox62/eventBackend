@@ -846,10 +846,6 @@ def createEvent():
             'longitude': request.form.get('longitude'),
             'create': request.form.get('create')
         }
-
-        
-        print(required_fields)
-
        
         missing_fields = [field for field, value in required_fields.items() if not value or value.strip() == '']
         if missing_fields:
@@ -924,8 +920,6 @@ def createEvent():
         db.session.add(new_event)
         db.session.commit()
 
-       
-        print(new_event.endTime)
 
         return jsonify({
             "message": "Event created successfully",
@@ -2425,7 +2419,7 @@ def salvePhoto():
                 "success": False,
                 "message": "Hai già salvato questa foto",
                 "alreadySaved": True
-            }), 400
+            }), 403
 
         new_file = FileSave(
             emailUser=email,
