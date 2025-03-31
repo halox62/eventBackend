@@ -909,6 +909,8 @@ def createEvent():
             return jsonify({
                 "error": f"Invalid data format: {str(ve)}"
             }), 400
+        
+        print(end_date)
 
         # Create new event
         new_event = Event(
@@ -938,7 +940,7 @@ def createEvent():
         app.logger.error(f"Error creating event: {str(e)}")
         return jsonify({"error": str(e)}), 500
     
-    
+
 @app.route('/getCreateEvent', methods=['POST'])#query che ritorna gli eventi che sono stati creati da un'email
 @firebase_required
 def getCreateEvent():
