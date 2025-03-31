@@ -845,7 +845,9 @@ def createEvent():
             'longitude': request.form.get('longitude'),
             'create': request.form.get('create')
         }
-
+        
+        # Debug logging
+        app.logger.debug(f"Received endTime: '{required_fields['endTime']}'")
        
         missing_fields = [field for field, value in required_fields.items() if not value]
         if missing_fields:
@@ -859,17 +861,23 @@ def createEvent():
             event_time = datetime.strptime(required_fields['eventTime'], '%H:%M').time()
             end_date = datetime.strptime(required_fields['endDate'], '%Y-%m-%d').date()
             
-            # Parse end time using custom approach
+            # Improved end time parsing with multiple fallbacks
             time_str = required_fields.get('endTime', '')
-            try:
-                # For format like "14:30" or "14:30:00"
-                hour, minute, *rest = (time_str.split(':') + ['0'])[:3]
-                second = rest[0] if rest else '0'
-                end_time = time(int(hour), int(minute), int(second))
-            except ValueError:
-                # Handle invalid time format
-                # Either set a default time or raise an error
-                end_time = time(0, 0, 0)  # Default to midnight
+            if not time_str or time_str.strip() == '':
+                end_time = time(0, 0, 0)  # Default time if empty
+            else:
+                try:
+                    # Try standard parsing first
+                    end_time = datetime.strptime(time_str, '%H:%M').time()
+                except ValueError:
+                    try:
+                        # Fallback to manual parsing
+                        hour, minute, *rest = (time_str.split(':') + ['0'])[:3]
+                        second = rest[0] if rest else '0'
+                        end_time = time(int(hour), int(minute), int(second))
+                    except (ValueError, IndexError):
+                        # Final fallback
+                        end_time = time(0, 0, 0)
             
             # Create full datetime objects for comparison
             event_datetime = datetime.combine(event_date, event_time)
@@ -897,6 +905,7 @@ def createEvent():
                 }), 400
 
         except ValueError as ve:
+            app.logger.error(f"Value error during parsing: {str(ve)}")
             return jsonify({
                 "error": f"Invalid data format: {str(ve)}"
             }), 400
@@ -925,10 +934,11 @@ def createEvent():
         }), 201
 
     except Exception as e:
-        db.session.rollback()  
+        db.session.rollback()  # Rollback in case of error
         app.logger.error(f"Error creating event: {str(e)}")
         return jsonify({"error": str(e)}), 500
-
+    
+    
 @app.route('/getCreateEvent', methods=['POST'])#query che ritorna gli eventi che sono stati creati da un'email
 @firebase_required
 def getCreateEvent():
