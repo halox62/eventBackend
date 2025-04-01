@@ -2408,12 +2408,19 @@ def salvePhoto():
             }), 400
 
       
+        photo_exists = FileRecord.query.filter_by(id=id_photo).first()
+        if not photo_exists:
+            return jsonify({
+                "success": False,
+                "message": "La foto richiesta non esiste"
+            }), 404
+      
+      
         existing_record = FileSave.query.filter_by(
             emailUser=email,
             idPhoto=id_photo
         ).first()
         
-       
         if existing_record:
             return jsonify({
                 "success": False,
@@ -2421,6 +2428,7 @@ def salvePhoto():
                 "alreadySaved": True
             }), 403
 
+       
         new_file = FileSave(
             emailUser=email,
             idPhoto=id_photo
@@ -2440,7 +2448,6 @@ def salvePhoto():
             "success": False,
             "message": f"Errore durante il salvataggio: {str(e)}"
         }), 500
-
 
 @app.route('/getUserPhotos', methods=['GET'])
 @firebase_required
