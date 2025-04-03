@@ -2577,12 +2577,21 @@ def report():
         if not index :
             return jsonify({"error": "index is required"}), 400
         
+        image = request.form.get('image')
+        if not index :
+            return jsonify({"error": "image is required"}), 400
+        
+        print(email)
+        print(index)
+        print(image)
+       
+        
 
 
         new_report = report(
             emailUser=email,
             idPhoto=index,
-            file_url=request.form.get('image'),
+            file_url=image,
             time_stamp=request.form.get('timestamp')
         )
 
