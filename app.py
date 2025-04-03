@@ -212,7 +212,7 @@ class FileSave(db.Model):
 class Report(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     emailUser = db.Column(db.String(120))
-    idPhoto=db.Column(db.String(120))
+    idPhoto=db.Column(db.Integer)
     file_url = db.Column(db.String(200), nullable=False)
     time_stamp = db.Column(db.String(120))
 
@@ -2573,26 +2573,23 @@ def report():
         if not email:
             return jsonify({"error": "email is required"}), 400
         
-        index = request.form.get('index')
-        if not index :
+        data = request.get_json() 
+        if not data:
+            return jsonify({"error": "request body must be JSON"}), 400
+
+        index = data.get('index')
+        if not index:
             return jsonify({"error": "index is required"}), 400
         
-        image = request.form.get('image')
-        if not index :
+        image = data.get('image')
+        if not image:
             return jsonify({"error": "image is required"}), 400
-        
-        print(email)
-        print(index)
-        print(image)
-       
-        
-
 
         new_report = report(
             emailUser=email,
-            idPhoto=index,
+            idPhoto=int(index), 
             file_url=image,
-            time_stamp=request.form.get('timestamp')
+            time_stamp=data.get('timestamp')
         )
 
         db.session.add(new_report)
