@@ -209,6 +209,13 @@ class FileSave(db.Model):
     idPhoto=db.Column(db.Integer)
 
 
+class Report(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    emailUser = db.Column(db.String(120))
+    idPhoto=db.Column(db.Integer)
+    file_url = db.Column(db.String(200), nullable=False)
+    time_stamp = db.Column(db.String(120))
+
 
 # Modello per gli utenti
 class UserAccount(db.Model):
@@ -2526,15 +2533,12 @@ def update_username():
     data = request.json
     email = request.user.get("email")
     new_username = data.get('newUserName')
-
-    print(email)
     
     if not email or not new_username:
         return jsonify({"error": "emailUser and newUserName are required"}), 400
 
     user = UserAccount.query.filter_by(emailUser=email).first()
 
-    print(user)
     
     if not user:
         return jsonify({"error": "User not found"}), 404
@@ -2559,6 +2563,35 @@ def search_user():
         return jsonify({'success': True, 'message': 'User found'}), 200
     else:
         return jsonify({'success': False, 'message': 'Account non presente'}), 404
+
+
+@app.route('/report', methods=['POST'])
+def report():
+    try:
+        email = request.user.get("email")
+
+        if not email:
+            return jsonify({"error": "email are required"}), 400
+        
+        new_report = report(
+            emailUser=email,
+            idPhoto=int(request.form.get('index')),
+            file_url=request.form.get('image'),
+            time_stamp=request.form.get('timestamp')
+        )
+
+    
+
+        db.session.add(new_report)
+        db.session.commit()
+
+        return jsonify({'message':"ok"}), 200
+
+    except Exception as e:
+        return jsonify({'error': 'Errore generico'}), 500
+
+    
+
 
 
 
