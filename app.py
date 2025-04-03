@@ -123,60 +123,7 @@ def firebase_required(f):
 
 
 
-def update_event_rankings():
-    with app.app_context():
-        events = Event.query.filter(
-            Event.end == "false",
-            or_(
-                Event.endDate > datetime.now().date(),
-                and_(
-                    Event.endDate == datetime.now().date(),
-                    Event.endTime >= datetime.now().time()
-                )
-            )
-        ).all()
-        for event in events:
-            print(f"Processing event: {event.eventCode}")
-            event.end = "true"
-            
-            photos = FileRecord.query.filter_by(code=event.eventCode).all()
-            sorted_photos = sorted(photos, key=lambda x: int(x.point), reverse=True)
-            
-            for index, photo in enumerate(sorted_photos):
-                user = UserAccount.query.filter_by(emailUser=photo.emailUser).first()
-                if user:
-                    score_multiplier = 100 - index if index < 100 else 1
-                    photo_points = int(photo.point) if photo.point.isdigit() else 0
-                    event_points = score_multiplier * photo_points
-                    
-                    current_points = int(user.point) if user.point and user.point.isdigit() else 0
-                    user.point = str(current_points + event_points)
-                    
-                    print(f"Updated {user.emailUser} score by {event_points} points for event {event.eventCode}")
-                    apply_penalty(user, event_points)
-            
 
-            db.session.flush()
-            
-
-        db.session.commit()
-
-        print("Event ranking update and penalty calculation complete.")
-
-def apply_penalty(user, event_points):
-    # Soglia di prestazione minima come percentuale del punteggio totale
-    performance_threshold = 0.1  # 10% del punteggio totale
-    min_required_points = user.point * performance_threshold
-
-    if event_points < min_required_points:
-        penalty_points = int((min_required_points - event_points) * 0.5)  # Penalità del 50% dei punti mancanti
-        user.point -= penalty_points
-        print(f"Applied penalty of {penalty_points} to {user.emailUser}.")
-
-scheduler = BackgroundScheduler()
-scheduler.add_job(update_event_rankings, 'cron', hour=0, minute=0)
-scheduler.start()
-  
 # Prendi l'URL del database dalle variabili d'ambiente
 DATABASE_URL = os.environ.get('DATABASE_URL')  
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
@@ -296,20 +243,16 @@ firebase_admin.initialize_app(cred, {
 bucket = storage.bucket()
 
 def update_event_rankings():
-    """
-    Aggiorna i ranking degli eventi terminati e calcola i punti finali per gli utenti
-    basandosi sulle foto caricate e i loro like.
-    """
     with app.app_context(): 
         try:
-            # Ottieni solo gli eventi che sono terminati
             current_datetime = datetime.now()
             completed_events = Event.query.filter(
+                Event.end == "false",
                 or_(
-                    Event.endDate < current_datetime.date(),
+                    Event.endDate > current_datetime.date(),
                     and_(
                         Event.endDate == current_datetime.date(),
-                        Event.endTime < current_datetime.time()
+                        current_datetime.time() > Event.endTime
                     )
                 )
             ).all()
@@ -328,7 +271,7 @@ def update_event_rankings():
                 ).all()
                 
                 if not subscribed_users:
-                    print(f"No subscribed users found for event {event.eventCode}")
+                   
                     continue
                 
                 # Crea un set di email degli utenti iscritti per ricerca veloce
@@ -342,14 +285,11 @@ def update_event_rankings():
             
         except Exception as e:
             db.session.rollback()
-            print(f"Error during ranking update: {str(e)}")
+           
             raise
 
 def process_event_photos(event, subscribed_emails: set):
-    """
-    Processa le foto per un evento terminato, considerando solo gli utenti iscritti.
-    """
-    # Ottieni le foto con il conteggio dei like solo per gli utenti iscritti
+
     photos_with_likes = db.session.query(
         FileRecord,
         func.count(LikePhoto.id).label('likes_count')
@@ -364,52 +304,42 @@ def process_event_photos(event, subscribed_emails: set):
     ).all()
     
     if not photos_with_likes:
-        print(f"No photos found for completed event {event.eventCode}")
         return
     
-    # Ordina le foto per numero di like
+
     sorted_photos = sorted(photos_with_likes, key=lambda x: x.likes_count, reverse=True)
     
-    # Processa ogni foto e aggiorna i punti
+
     for index, (photo, likes_count) in enumerate(sorted_photos):
         update_user_points(photo, index, likes_count)
 
 def update_user_points(photo, index: int, likes_count: int):
-    """
-    Aggiorna i punti dell'utente basandosi sulla performance della sua foto.
-    """
     user = UserAccount.query.filter_by(emailUser=photo.emailUser).first()
     if not user:
-        print(f"User not found for email: {photo.emailUser}")
+       
         return
     
-    # Calcola i punti
+
     score_multiplier = calculate_multiplier(index)
     event_points = score_multiplier * likes_count
     
-    # Converti i punti attuali da string a int
+
     current_points = int(user.point) if user.point and user.point.isdigit() else 0
     
-    # Aggiorna i punti dell'utente
+
     user.point = str(current_points + event_points)
     print(f"Updated {user.emailUser} score by {event_points} points")
     
-    # Aggiorna i punti della foto
+
     photo.point = str(event_points)
     
-    # Applica penalità se necessario
+
     apply_penalty(user, event_points)
 
 def calculate_multiplier(index: int) -> int:
-    """
-    Calcola il moltiplicatore di punteggio basato sulla posizione.
-    """
     return 100 - index if index < 100 else 1
 
 def apply_penalty(user, event_points: int):
-    """
-    Applica una penalità se la performance è sotto la soglia minima.
-    """
     PERFORMANCE_THRESHOLD = 0.1  # 10% del punteggio totale
     PENALTY_RATE = 0.5  # 50% dei punti mancanti
     
@@ -420,7 +350,7 @@ def apply_penalty(user, event_points: int):
         penalty_points = int((min_required_points - event_points) * PENALTY_RATE)
         new_points = max(0, current_points - penalty_points)  # Evita punti negativi
         user.point = str(new_points)
-        print(f"Applied penalty of {penalty_points} points")
+
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(update_event_rankings, 'cron', hour=0, minute=0)
@@ -2594,7 +2524,7 @@ def report():
         if not timestamp :
             return jsonify({"error": "timestamp "}), 400
 
-        new_report = Report(  # Use Report class
+        new_report = Report( 
             emailUser=email,
             idPhoto=id_photo,
             file_url=image,
