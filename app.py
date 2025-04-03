@@ -2573,23 +2573,32 @@ def report():
         if not email:
             return jsonify({"error": "email is required"}), 400
         
-        data = request.get_json() 
+        data = request.get_json()
         if not data:
             return jsonify({"error": "request body must be JSON"}), 400
 
         index = data.get('index')
         if not index:
             return jsonify({"error": "index is required"}), 400
+        try:
+            id_photo = int(index)  # Convert to integer for idPhoto
+        except ValueError:
+            return jsonify({"error": "index must be a valid integer"}), 400
         
         image = data.get('image')
         if not image:
             return jsonify({"error": "image is required"}), 400
+       
 
-        new_report = report(
+        timestamp = data.get('timestamp')
+        if timestamp :
+            return jsonify({"error": "timestamp "}), 400
+
+        new_report = Report(  # Use Report class
             emailUser=email,
-            idPhoto=int(index), 
+            idPhoto=id_photo,
             file_url=image,
-            time_stamp=data.get('timestamp')
+            time_stamp=timestamp
         )
 
         db.session.add(new_report)
@@ -2599,7 +2608,6 @@ def report():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 if __name__ == '__main__':
     app.run(host = 'localhost', port = 8080, debug = True)    
