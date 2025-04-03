@@ -2581,7 +2581,7 @@ def report():
         if not index:
             return jsonify({"error": "index is required"}), 400
         try:
-            id_photo = int(index)  # Convert to integer for idPhoto
+            id_photo = int(index)  
         except ValueError:
             return jsonify({"error": "index must be a valid integer"}), 400
         
@@ -2591,7 +2591,7 @@ def report():
        
 
         timestamp = data.get('timestamp')
-        if timestamp :
+        if not timestamp :
             return jsonify({"error": "timestamp "}), 400
 
         new_report = Report(  # Use Report class
