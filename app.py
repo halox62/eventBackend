@@ -212,7 +212,7 @@ class FileSave(db.Model):
 class Report(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     emailUser = db.Column(db.String(120))
-    idPhoto=db.Column(db.Integer)
+    idPhoto=db.Column(db.String(120))
     file_url = db.Column(db.String(200), nullable=False)
     time_stamp = db.Column(db.String(120))
 
@@ -2566,33 +2566,33 @@ def search_user():
 
 
 @app.route('/report', methods=['POST'])
+@firebase_required
 def report():
     try:
         email = request.user.get("email")
-
         if not email:
-            return jsonify({"error": "email are required"}), 400
+            return jsonify({"error": "email is required"}), 400
         
+        index = request.form.get('index')
+        if not index :
+            return jsonify({"error": "index is required"}), 400
+        
+
+
         new_report = report(
             emailUser=email,
-            idPhoto=int(request.form.get('index')),
+            idPhoto=index,
             file_url=request.form.get('image'),
             time_stamp=request.form.get('timestamp')
         )
 
-    
-
         db.session.add(new_report)
         db.session.commit()
 
-        return jsonify({'message':"ok"}), 200
+        return jsonify({'message': "ok"}), 200
 
     except Exception as e:
-        return jsonify({'error': 'Errore generico'}), 500
-
-    
-
-
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':
