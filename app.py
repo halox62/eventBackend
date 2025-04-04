@@ -247,14 +247,18 @@ def update_event_rankings():
         try:
             current_datetime = datetime.now()
             completed_events = Event.query.filter(
-                Event.end == "false",
-                or_(
-                    Event.endDate > current_datetime.date(),
+                and_( 
+                    Event.end == "false",
+                    or_(
+                        Event.endDate > current_datetime.date(),
                     and_(
                         Event.endDate == current_datetime.date(),
                         current_datetime.time() > Event.endTime
                     )
                 )
+            )
+              
+                
             ).all()
             
             if not completed_events:
@@ -353,7 +357,7 @@ def apply_penalty(user, event_points: int):
 
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(update_event_rankings, 'cron', hour=0, minute=0)
+scheduler.add_job(update_event_rankings, 'cron', hour=9, minute=15)
 scheduler.start()
 
 
