@@ -260,6 +260,10 @@ def update_event_rankings():
               
                 
             ).all()
+
+            
+            for event in completed_events:
+                print(f"ID: {event.id}, End: {event.end}, EndDate: {event.endDate}, EndTime: {event.endTime}")
             
             if not completed_events:
                 print("No completed events found to process")
@@ -357,7 +361,7 @@ def apply_penalty(user, event_points: int):
 
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(update_event_rankings, 'cron', hour=9, minute=15)
+scheduler.add_job(update_event_rankings, 'cron', hour=11, minute=30)
 scheduler.start()
 
 
