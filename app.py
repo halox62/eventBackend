@@ -167,7 +167,7 @@ class Report(db.Model):
 # Modello per gli utenti
 class UserAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    emailUser = db.Column(db.String(120), unique=True, nullable=False)
+    emailUser = db.Column(db.String(120), unique=True, nullable=True)
     userName = db.Column(db.String(80), nullable=False)  
     profileImageUrl = db.Column(db.String(200), nullable=True)
     point = db.Column(db.String(200), nullable=True)
@@ -574,6 +574,7 @@ def register():
         userName = request.form['userName']
         profileImage = request.files['profileImage']
         age = request.files['age']
+        print(age)
 
         existing_user = UserAccount.query.filter_by(emailUser=email).first()
         if existing_user:
@@ -587,6 +588,7 @@ def register():
         profileImageUrl = blob.public_url
 
         new_user = UserAccount(emailUser=email, userName=userName, profileImageUrl=profileImageUrl, point="0",age=age)
+        print("hello")
         db.session.add(new_user)
         db.session.commit()
 
