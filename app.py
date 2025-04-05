@@ -567,16 +567,15 @@ def login():
 @app.route('/register', methods=['POST'])
 def register():
     try:
-        print("hello")
+
         if 'profileImage' not in request.files or 'email' not in request.form or 'userName' not in request.form or 'age' not in request.form:
             return jsonify({"error": "Missing data or image"}), 400
         
         email = request.form['email']
         userName = request.form['userName']
         profileImage = request.files['profileImage']
-        print("hello1")
-        age = request.files['age']
-        print(age)
+        age = request.form['age']
+
 
         existing_user = UserAccount.query.filter_by(emailUser=email).first()
         if existing_user:
