@@ -568,7 +568,7 @@ def login():
 def register():
     try:
         print("hello")
-        if 'profileImage' not in request.files or 'email' not in request.form or 'userName' not in request.form or 'age' not in request.form:
+        if 'profileImage' not in request.files or 'email' not in request.form or 'userName' not in request.form:
             return jsonify({"error": "Missing data or image"}), 400
         
         email = request.form['email']
