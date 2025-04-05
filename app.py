@@ -171,6 +171,7 @@ class UserAccount(db.Model):
     userName = db.Column(db.String(80), nullable=False)  
     profileImageUrl = db.Column(db.String(200), nullable=True)
     point = db.Column(db.String(200), nullable=True)
+    age = db.Column(db.String(80), nullable=False)  
 
 # Mi piace
 class LikePhoto(db.Model):
@@ -566,12 +567,13 @@ def login():
 @app.route('/register', methods=['POST'])
 def register():
     try:
-        if 'profileImage' not in request.files or 'email' not in request.form or 'userName' not in request.form:
+        if 'profileImage' not in request.files or 'email' not in request.form or 'userName' not in request.form or 'age' not in request.form:
             return jsonify({"error": "Missing data or image"}), 400
         
         email = request.form['email']
         userName = request.form['userName']
         profileImage = request.files['profileImage']
+        age = request.files['age']
 
         existing_user = UserAccount.query.filter_by(emailUser=email).first()
         if existing_user:
@@ -584,7 +586,7 @@ def register():
 
         profileImageUrl = blob.public_url
 
-        new_user = UserAccount(emailUser=email, userName=userName, profileImageUrl=profileImageUrl, point="0")
+        new_user = UserAccount(emailUser=email, userName=userName, profileImageUrl=profileImageUrl, point="0",age=age)
         db.session.add(new_user)
         db.session.commit()
 
