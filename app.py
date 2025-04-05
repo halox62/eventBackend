@@ -568,12 +568,13 @@ def login():
 def register():
     try:
         print("hello")
-        if 'profileImage' not in request.files or 'email' not in request.form or 'userName' not in request.form:
+        if 'profileImage' not in request.files or 'email' not in request.form or 'userName' not in request.form or 'age' not in request.form:
             return jsonify({"error": "Missing data or image"}), 400
         
         email = request.form['email']
         userName = request.form['userName']
         profileImage = request.files['profileImage']
+        print("hello1")
         age = request.files['age']
         print(age)
 
@@ -589,7 +590,7 @@ def register():
         profileImageUrl = blob.public_url
 
         new_user = UserAccount(emailUser=email, userName=userName, profileImageUrl=profileImageUrl, point="0",age=age)
-        print("hello")
+        print("hello2")
         db.session.add(new_user)
         db.session.commit()
 
