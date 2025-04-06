@@ -675,7 +675,6 @@ def get_Image():
     for blob in blobs:
         blob.make_public()
         file_name = blob.name.split("/")[-1]
-        
         file_id = file_records_dict.get(file_name, None)
         
         if file_id is not None:
