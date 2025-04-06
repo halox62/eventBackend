@@ -696,10 +696,13 @@ def get_profile():
         if user is None:
             return jsonify({"error": "User not found"}), 404
         
-        # Get distinct photo IDs for this email and count them
-        file_count = (db.session.query(FileSave.idPhoto)
+        # Ottieni tutti gli idPhoto dalla tabella FileSave
+        saved_photos = FileSave.query.with_entities(FileSave.idPhoto).all()
+        
+        # Conta quanti di questi idPhoto corrispondono a file dell'utente in FileRecord
+        file_count = (FileRecord.query
+                     .filter(FileRecord.id.in_([photo[0] for photo in saved_photos]))
                      .filter_by(emailUser=email)
-                     .distinct()
                      .count())
 
         return jsonify({
@@ -710,7 +713,8 @@ def get_profile():
         }), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"error": str(e)}), 500
+
 
 
 
@@ -730,10 +734,13 @@ def get_profileS():
         if user is None:
             return jsonify({"error": "User not found"}), 404
         
-        # Get distinct photo IDs for this email and count them
-        file_count = (db.session.query(FileSave.idPhoto)
+        # Ottieni tutti gli idPhoto dalla tabella FileSave
+        saved_photos = FileSave.query.with_entities(FileSave.idPhoto).all()
+        
+        # Conta quanti di questi idPhoto corrispondono a file dell'utente in FileRecord
+        file_count = (FileRecord.query
+                     .filter(FileRecord.id.in_([photo[0] for photo in saved_photos]))
                      .filter_by(emailUser=email)
-                     .distinct()
                      .count())
 
         return jsonify({
@@ -744,7 +751,7 @@ def get_profileS():
         }), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/getImageS', methods=['POST'])
 @firebase_required
