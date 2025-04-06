@@ -171,7 +171,7 @@ class UserAccount(db.Model):
     userName = db.Column(db.String(80), nullable=False)  
     profileImageUrl = db.Column(db.String(200), nullable=True)
     point = db.Column(db.String(200), nullable=True)
-    age = db.Column(db.String(80), nullable=False)  
+   
 
 # Mi piace
 class LikePhoto(db.Model):
@@ -575,6 +575,9 @@ def register():
         userName = request.form['userName']
         profileImage = request.files['profileImage']
         age = request.form['age']
+        
+        if int(age) <16:
+            return jsonify({"error": "invalid age"}), 400
 
 
         existing_user = UserAccount.query.filter_by(emailUser=email).first()
@@ -588,8 +591,8 @@ def register():
 
         profileImageUrl = blob.public_url
 
-        new_user = UserAccount(emailUser=email, userName=userName, profileImageUrl=profileImageUrl, point="0",age=age)
-        print("hello2")
+        new_user = UserAccount(emailUser=email, userName=userName, profileImageUrl=profileImageUrl, point="0")
+        
         db.session.add(new_user)
         db.session.commit()
 
