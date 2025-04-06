@@ -683,9 +683,7 @@ def get_Image():
 @app.route('/profile', methods=['POST'])
 @firebase_required
 def get_profile():
-
     try:
-        
         email = request.user.get("email")
 
         if not email:
@@ -695,8 +693,11 @@ def get_profile():
         if user is None:
             return jsonify({"error": "User not found"}), 404
         
-        
-        file_count = FileSave.query.filter_by(emailUser=email).count()
+        # Get distinct photo IDs for this email and count them
+        file_count = (db.session.query(FileSave.idPhoto)
+                     .filter_by(emailUser=email)
+                     .distinct()
+                     .count())
 
         return jsonify({
             "userName": user.userName,
@@ -706,8 +707,7 @@ def get_profile():
         }), 200
 
     except Exception as e:
-        return jsonify({"error": "error"}), 500
-    
+        return jsonify({"error": str(e)}), 500 
 
 
 
@@ -727,8 +727,11 @@ def get_profileS():
         if user is None:
             return jsonify({"error": "User not found"}), 404
         
-        
-        file_count = FileSave.query.filter_by(emailUser=email).count()
+        # Get distinct photo IDs for this email and count them
+        file_count = (db.session.query(FileSave.idPhoto)
+                     .filter_by(emailUser=email)
+                     .distinct()
+                     .count())
 
         return jsonify({
             "userName": user.userName,
@@ -738,7 +741,7 @@ def get_profileS():
         }), 200
 
     except Exception as e:
-        return jsonify({"error": "error"}), 500
+        return jsonify({"error": str(e)}), 500 
 
 @app.route('/getImageS', methods=['POST'])
 @firebase_required
