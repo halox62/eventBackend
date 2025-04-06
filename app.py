@@ -646,6 +646,7 @@ def profile_with_images():
     }), 200
 
 
+
 @app.route('/getImage', methods=['POST'])
 @firebase_required
 def get_Image():
@@ -657,17 +658,19 @@ def get_Image():
     images = []
     blobs = bucket.list_blobs(prefix=f'images/{email}/')
 
+    # Ottieni tutti i record di FileRecord per l'utente
     file_records = FileRecord.query.filter_by(emailUser=email).all()
-
     file_records_dict = {record.file_url.split("/")[-1]: record.id for record in file_records}
 
-    saved_photos = FileSave.query.filter_by(emailUser=email).all()
-
-    photo_counts = Counter([saved.idPhoto for saved in saved_photos])
+    # Ottieni tutti i salvataggi da FileSave e conta le occorrenze di ogni idPhoto
+    all_saved_photos = FileSave.query.with_entities(FileSave.idPhoto).all()
+    photo_counts = {}
+    for photo in all_saved_photos:
+        file_id = photo[0]
+        photo_counts[file_id] = photo_counts.get(file_id, 0) + 1
 
     for blob in blobs:
         blob.make_public()
-
         file_name = blob.name.split("/")[-1]
         
         file_id = file_records_dict.get(file_name, None)
@@ -676,7 +679,7 @@ def get_Image():
             image_info = {
                 "id": file_id,  
                 "url": blob.public_url,
-                "point": photo_counts.get(file_id, 0) 
+                "point": photo_counts.get(file_id, 0)  # Numero totale di salvataggi in assoluto
             }
             images.append(image_info)
 
