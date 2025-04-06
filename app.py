@@ -658,16 +658,19 @@ def get_Image():
     images = []
     blobs = bucket.list_blobs(prefix=f'images/{email}/')
 
-    # Ottieni tutti i record di FileRecord per l'utente
+    
     file_records = FileRecord.query.filter_by(emailUser=email).all()
     file_records_dict = {record.file_url.split("/")[-1]: record.id for record in file_records}
 
-    # Ottieni tutti i salvataggi da FileSave e conta le occorrenze di ogni idPhoto
+    
     all_saved_photos = FileSave.query.with_entities(FileSave.idPhoto).all()
+    saved_photo_ids = [photo[0] for photo in all_saved_photos]
+
+   
     photo_counts = {}
-    for photo in all_saved_photos:
-        file_id = photo[0]
-        photo_counts[file_id] = photo_counts.get(file_id, 0) + 1
+    for file_id in saved_photo_ids:
+        if any(record.id == file_id for record in file_records):
+            photo_counts[file_id] = photo_counts.get(file_id, 0) + 1
 
     for blob in blobs:
         blob.make_public()
@@ -679,7 +682,7 @@ def get_Image():
             image_info = {
                 "id": file_id,  
                 "url": blob.public_url,
-                "point": photo_counts.get(file_id, 0)  # Numero totale di salvataggi in assoluto
+                "point": photo_counts.get(file_id, 0)  
             }
             images.append(image_info)
 
