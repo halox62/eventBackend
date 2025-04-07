@@ -2568,5 +2568,37 @@ def report():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/likes/<int:file_id>', methods=['GET'])
+def get_likes_by_file(file_id):
+    try:
+       
+        likes = LikePhoto.query.filter_by(file_id=file_id).all()
+        
+        if not likes:
+            return jsonify({"message": "Nessun mi piace trovato per questa foto", "data": []}), 200
+        
+      
+        user_emails = [like.emailUser for like in likes]
+        
+      
+        users = UserAccount.query.filter(UserAccount.emailUser.in_(user_emails)).all()
+        
+      
+        response = [
+            {
+                "emailUser": user.emailUser,
+                "userName": user.userName,
+                "profileImageUrl": user.profileImageUrl,
+            }
+            for user in users
+        ]
+        
+        return jsonify({"message": "Profili recuperati con successo", "data": response}), 200
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(host = 'localhost', port = 8080, debug = True)    
